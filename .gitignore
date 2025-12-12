@@ -1,0 +1,6 @@
+venv/
+logs/
+.env
+delta-lake/checkpoints/
+*.pyc
+__pycache__/
