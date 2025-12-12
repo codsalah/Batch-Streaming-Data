@@ -4,3 +4,7 @@ logs/
 delta-lake/checkpoints/
 *.pyc
 __pycache__/
+dags/
+data/
+delta-lake/
+plugins/

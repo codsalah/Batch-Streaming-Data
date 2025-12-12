@@ -54,7 +54,7 @@ services:
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
     ports:
-      - "8080:8080"
+      - "8087:8080"
     command: webserver
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://localhost:8080/health" ]
@@ -160,6 +160,7 @@ services:
         condition: service_healthy
     ports:
       - "${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}"
+      - "9404:9404"   # JMX Exporter
     environment:
       KAFKA_BROKER_ID: ${KAFKA_BROKER_ID}
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_CLIENT_PORT}
@@ -174,6 +175,11 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
     volumes:
       - kafka_data:/var/lib/kafka/data
+      - ./prometheus/kafka-2_0_0.yml:/etc/jmx-exporter/kafka-2_0_0.yml
+      - ./prometheus/jmx_prometheus_javaagent.jar:/opt/jmx_prometheus_javaagent.jar
+    command: >
+      bash -c "KAFKA_HEAP_OPTS='-Xmx1G -Xms1G' KAFKA_JVM_PERFORMANCE_OPTS='-javaagent:/opt/jmx_prometheus_javaagent.jar=9404:/etc/jmx-exporter/kafka-2_0_0.yml' /etc/confluent/docker/run"
+
     healthcheck:
       test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:${KAFKA_INTERNAL_PORT}" ]
       interval: 10s
@@ -182,6 +188,7 @@ services:
       start_period: 15s
     networks:
       - data-pipeline
+
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -253,6 +260,35 @@ services:
       - ./delta-lake:/opt/delta-lake
     networks:
       - data-pipeline
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - data-pipeline
+
+ 
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - data-pipeline
+
+ 
+
 
 volumes:
   postgres_data:
