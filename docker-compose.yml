@@ -159,7 +159,6 @@ services:
       zookeeper:
         condition: service_healthy
     ports:
-      - "${KAFKA_INTERNAL_PORT}:${KAFKA_INTERNAL_PORT}"
       - "${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}"
     environment:
       KAFKA_BROKER_ID: ${KAFKA_BROKER_ID}
