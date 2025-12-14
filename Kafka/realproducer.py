@@ -14,7 +14,7 @@ if not KAFKA_BROKER:
     external_port = os.getenv('KAFKA_EXTERNAL_PORT', '9093')
     KAFKA_BROKER = f"localhost:{external_port}"
 
-TOPIC = os.getenv('KAFKA_TOPIC', 'earthquake_raw')
+TOPIC = os.getenv('KAFKA_TOPIC', 'real_earthquake')
 WOLF_URL = os.getenv('WOLF_URL', 'wss://seisjs.wolfx.jp/all_seis')
 
 # Initialize Kafka Producer
@@ -48,14 +48,12 @@ async def stream_seismic_data():
                             print(f"Received non-JSON message: {message}")
                             continue
 
-                        # Check for application-level heartbeat
+                        # Check heartbeat
                         if data.get('type') == 'heartbeat':
                             # print("Heartbeat received") # Optional logging
                             continue
 
-                        # Send to Kafka
-                        # Using 'station' or 'id' as key if available for partitioning
-                        # For now, let's look for a suitable key or default to None
+                        # Send to Kafka (using 'Station' as key)
                         key = None
                         if 'Station' in data:
                              key = str(data['Station'])
