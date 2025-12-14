@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# file name kafka-topics-earthquakes.sh
 # Load environment variables with defaults
 KAFKA_PORT=${KAFKA_INTERNAL_PORT:-9092}
 TOPIC=${KAFKA_TOPIC:-earthquake_raw}

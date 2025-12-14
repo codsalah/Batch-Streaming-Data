@@ -14,7 +14,7 @@ if not KAFKA_BROKER:
     external_port = os.getenv('KAFKA_EXTERNAL_PORT', '9093')
     KAFKA_BROKER = f"localhost:{external_port}"
 
-TOPIC = os.getenv('KAFKA_TOPIC', 'real_earthquake')
+TOPIC = os.getenv('KAFKA_TOPIC_WOLF', 'wolf_seismic_stream')
 WOLF_URL = os.getenv('WOLF_URL', 'wss://seisjs.wolfx.jp/all_seis')
 
 # Initialize Kafka Producer
