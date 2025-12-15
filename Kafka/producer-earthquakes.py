@@ -8,7 +8,7 @@ from kafka import KafkaProducer
 
 # ===== Kafka Configuration =====
 KAFKA_BROKER = "localhost:9093"
-TOPIC = os.getenv('KAFKA_TOPIC_earthquakes', 'earthquake_raw')
+TOPIC = os.getenv('KAFKA_TOPIC_EARTHQUAKE', 'earthquake_raw')
 
 producer = KafkaProducer(
     bootstrap_servers=KAFKA_BROKER,

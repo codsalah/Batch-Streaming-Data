@@ -6,7 +6,7 @@
 #file name Kafka-topic-wolf_seismic_stream.sh 
 
 KAFKA_PORT=${KAFKA_INTERNAL_PORT:-9092}
-TOPIC=${KAFKA_TOPIC:-wolf_seismic_stream}
+TOPIC=${KAFKA_TOPIC_WOLF:-wolf_seismic_stream}
 
 kafka-topics \
   --bootstrap-server localhost:${KAFKA_PORT} \
