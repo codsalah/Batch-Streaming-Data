@@ -8,3 +8,4 @@ dags/
 data/
 delta-lake/
 plugins/
+docker-compose_example.yml
