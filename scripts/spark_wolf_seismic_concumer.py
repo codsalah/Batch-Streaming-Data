@@ -70,7 +70,10 @@ def create_spark_session(app_name="WolfSeismicConsumer"):
     spark = (
         SparkSession.builder
         .appName(app_name)
-        .config("spark.sql.shuffle.partitions", "4")
+        .config("spark.sql.shuffle.partitions", "4") 
+        .config("spark.ui.prometheus.enabled", "true") \
+        .config("spark.executor.processTreeMetrics.enabled", "true") \
+
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
