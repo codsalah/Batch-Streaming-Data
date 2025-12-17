@@ -73,7 +73,8 @@ def create_spark_session(app_name="WolfSeismicConsumer"):
         .config("spark.sql.shuffle.partitions", "4") 
         .config("spark.ui.prometheus.enabled", "true") \
         .config("spark.executor.processTreeMetrics.enabled", "true") \
-
+        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+        .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
@@ -142,10 +143,9 @@ def main():
     query = (
         clean_df.writeStream
         .outputMode("append")
-        .format("console")
-        .option("truncate", False)
-        .trigger(processingTime="10 seconds")
-        .start()
+        .format("delta")
+        .option("checkpointLocation", "/opt/delta-lake/checkpoints/wolf_seismic")
+        .start("/opt/delta-lake/tables/wolf_seismic")
     )
 
     print("Wolf seismic stream is running...")

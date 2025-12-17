@@ -81,10 +81,8 @@ def create_spark_session():
         .config("spark.sql.streaming.checkpointLocation", CHECKPOINT_LOCATION) \
         .config("spark.ui.prometheus.enabled", "true") \
         .config("spark.executor.processTreeMetrics.enabled", "true") \
-        .config("spark.metrics.conf.*.sink.prometheus.class", "org.apache.spark.metrics.sink.PrometheusServlet") \
-        .config("spark.metrics.conf.*.sink.prometheus.path", "/metrics") \
-        .config("spark.metrics.conf.master.sink.prometheus.path", "/metrics") \
-        .config("spark.metrics.conf.applications.sink.prometheus.path", "/metrics") \
+        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+        .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .getOrCreate()
 
 
@@ -183,17 +181,15 @@ def main():
     transformed_df = parse_and_transform(kafka_df)
     print(f"✓ Transformation pipeline configured")
     
-    # For now, write to console to verify structure
     print("\n" + "=" * 80)
-    print("Starting stream output to console...")
+    print("Starting stream output to Delta Lake...")
     print("=" * 80 + "\n")
     
     query = transformed_df.writeStream \
         .outputMode("append") \
-        .format("console") \
-        .option("truncate", False) \
-        .trigger(processingTime="10 seconds") \
-        .start()
+        .format("delta") \
+        .option("checkpointLocation", "/opt/delta-lake/checkpoints/earthquakes") \
+        .start("/opt/delta-lake/tables/earthquakes")
     
     print("✓ Stream started successfully!")
     print("✓ Processing events every 10 seconds...")
