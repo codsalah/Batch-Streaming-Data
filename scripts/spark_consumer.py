@@ -79,6 +79,12 @@ def create_spark_session():
     return SparkSession.builder \
         .appName("EarthquakeStreamProcessor") \
         .config("spark.sql.streaming.checkpointLocation", CHECKPOINT_LOCATION) \
+        .config("spark.ui.prometheus.enabled", "true") \
+        .config("spark.executor.processTreeMetrics.enabled", "true") \
+        .config("spark.metrics.conf.*.sink.prometheus.class", "org.apache.spark.metrics.sink.PrometheusServlet") \
+        .config("spark.metrics.conf.*.sink.prometheus.path", "/metrics") \
+        .config("spark.metrics.conf.master.sink.prometheus.path", "/metrics") \
+        .config("spark.metrics.conf.applications.sink.prometheus.path", "/metrics") \
         .getOrCreate()
 
 

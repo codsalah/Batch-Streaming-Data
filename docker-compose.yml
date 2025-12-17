@@ -160,7 +160,7 @@ services:
         condition: service_healthy
     ports:
       - "${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}"
-      - "9404:9404"   # JMX Exporter
+      - "9404:9404" # JMX Exporter
     environment:
       KAFKA_BROKER_ID: ${KAFKA_BROKER_ID}
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_CLIENT_PORT}
@@ -188,7 +188,6 @@ services:
       start_period: 15s
     networks:
       - data-pipeline
-
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -267,12 +266,9 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - "9090:9090"
+      - "9099:9090"
     networks:
       - data-pipeline
-
- 
-
 
   grafana:
     image: grafana/grafana:latest
@@ -286,9 +282,6 @@ services:
       - prometheus
     networks:
       - data-pipeline
-
- 
-
 
 volumes:
   postgres_data:
