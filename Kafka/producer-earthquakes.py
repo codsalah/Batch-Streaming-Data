@@ -7,7 +7,7 @@ from datetime import datetime
 from kafka import KafkaProducer
 
 # ===== Kafka Configuration =====
-KAFKA_BROKER = "localhost:9093"
+KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9093')
 TOPIC = os.getenv('KAFKA_TOPIC_EARTHQUAKE', 'earthquake_raw')
 
 producer = KafkaProducer(
