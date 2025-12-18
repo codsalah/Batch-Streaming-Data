@@ -59,13 +59,13 @@ with DAG(
         verify_zookeeper_health = BashOperator(
             task_id="verify_zookeeper_health",
             # this is to check if zookeeper is running and accessible if not it will exit with 1
-            bash_command="nc -z -v -w 5 zookeeper 2181 || (echo 'Zookeeper Down' && exit 1)",
+            bash_command="python3 -c \"import socket; s = socket.socket(); s.settimeout(5); result = s.connect_ex(('zookeeper', 2181)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Zookeeper Down' && exit 1)",
         )
         
         verify_kafka_brokers = BashOperator(
             task_id="verify_kafka_brokers",
             # this is to check if kafka brokers are running and accessible if not it will exit with 1
-            bash_command="nc -z -v -w 5 kafka 9092 || (echo 'Kafka Broker Down' && exit 1)",
+            bash_command="python3 -c \"import socket; s = socket.socket(); s.settimeout(5); result = s.connect_ex(('kafka', 9092)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Kafka Broker Down' && exit 1)",
         )
 
         kafka_availability_sensor = BashOperator(
@@ -83,7 +83,7 @@ with DAG(
         ping_spark_master = BashOperator(
             task_id="ping_spark_master",
             # this is to check if spark master is running and accessible if not it will exit with 1
-            bash_command="nc -z -v -w 5 spark-master 7077 || (echo 'Spark Master Down' && exit 1)",
+            bash_command="python3 -c \"import socket; s = socket.socket(); s.settimeout(5); result = s.connect_ex(('spark-master', 7077)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Spark Master Down' && exit 1)",
         )
 
         verify_worker_slots = BashOperator(
@@ -100,6 +100,17 @@ with DAG(
 
         # spark master ---> spark workers ---> spark master ui
         ping_spark_master >> verify_worker_slots >> check_spark_master_ui
+
+    with TaskGroup("verify_consumer_apps") as verify_consumer_apps:
+        verify_wolf_seismic_consumer = BashOperator(
+            task_id="verify_wolf_seismic_consumer",
+            bash_command="curl -s http://spark-master:8080/json/ | grep -q 'WolfSeismicConsumer' && echo 'WolfSeismicConsumer app is running' || echo 'WARNING: WolfSeismicConsumer app not found on Spark Master (this is OK if not started yet)'",
+        )
+
+        verify_earthquake_consumer = BashOperator(
+            task_id="verify_earthquake_consumer",
+            bash_command="curl -s http://spark-master:8080/json/ | grep -q 'EarthquakeStreamProcessor' && echo 'EarthquakeStreamProcessor app is running' || echo 'WARNING: EarthquakeStreamProcessor app not found on Spark Master (this is OK if not started yet)'",
+        )
 
     # kalam fady
     branch_check_topic_inventory = BranchPythonOperator(
@@ -118,5 +129,6 @@ with DAG(
     )
 
     start_pipeline >> check_system_resources >> [verify_broker_stack, verify_compute_cluster]
-    [verify_broker_stack, verify_compute_cluster] >> branch_check_topic_inventory
+    verify_compute_cluster >> verify_consumer_apps
+    [verify_broker_stack, verify_consumer_apps] >> branch_check_topic_inventory
     branch_check_topic_inventory >> [infrastructure_validated_successfully, infrastructure_validation_failed]
