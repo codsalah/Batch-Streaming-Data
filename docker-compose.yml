@@ -36,6 +36,7 @@ services:
     image: apache/airflow:2.7.3-python3.10
     container_name: airflow-webserver
     hostname: airflow-webserver
+    user: root
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,12 +48,17 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: '${AIRFLOW_LOAD_EXAMPLES}'
       AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: '${AIRFLOW_EXPOSE_CONFIG}'
+      KAFKA_BROKER: kafka:${KAFKA_INTERNAL_PORT}
+      PYTHONPATH: /home/airflow/.local/lib/python3.10/site-packages
+      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
+      - ./Kafka:/opt/airflow/Kafka
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8087:8080"
     command: webserver
@@ -69,6 +75,7 @@ services:
     image: apache/airflow:2.7.3-python3.10
     container_name: airflow-scheduler
     hostname: airflow-scheduler
+    user: root
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,12 +85,17 @@ services:
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: '${AIRFLOW_DAGS_PAUSED_AT_CREATION}'
       AIRFLOW__CORE__LOAD_EXAMPLES: '${AIRFLOW_LOAD_EXAMPLES}'
+      KAFKA_BROKER: kafka:${KAFKA_INTERNAL_PORT}
+      PYTHONPATH: /home/airflow/.local/lib/python3.10/site-packages
+      PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
+      - ./Kafka:/opt/airflow/Kafka
+      - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler
     healthcheck:
       test: [ "CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--hostname", "airflow-scheduler" ]
@@ -218,6 +230,7 @@ services:
     volumes:
       - ./data/spark:/opt/spark/work
       - ./scripts:/opt/spark/scripts
+      - ./spark-consumers:/opt/spark/consumers
       - ./delta-lake:/opt/delta-lake
     networks:
       - data-pipeline
@@ -237,6 +250,7 @@ services:
     volumes:
       - ./data/spark:/opt/spark/work
       - ./scripts:/opt/spark/scripts
+      - ./spark-consumers:/opt/spark/consumers
       - ./delta-lake:/opt/delta-lake
     networks:
       - data-pipeline
@@ -256,6 +270,7 @@ services:
     volumes:
       - ./data/spark:/opt/spark/work
       - ./scripts:/opt/spark/scripts
+      - ./spark-consumers:/opt/spark/consumers
       - ./delta-lake:/opt/delta-lake
     networks:
       - data-pipeline
