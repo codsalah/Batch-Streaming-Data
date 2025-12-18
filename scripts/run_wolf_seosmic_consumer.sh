@@ -14,16 +14,20 @@ SPARK_CONTAINER="spark-master"
 SPARK_SUBMIT="/opt/spark/bin/spark-submit"
 
 # Spark application script path
-APP_PATH="/opt/spark/scripts/spark_wolf_seismic_concumer.py"
+APP_PATH="/opt/spark/scripts/spark_wolf_seismic_consumer.py"
 
 # Required Kafka package version (match Spark version)
-KAFKA_PACKAGE="org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0"
+# Required Kafka and Delta Lake packages
+KAFKA_PACKAGE="org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,io.delta:delta-spark_2.12:3.0.0"
 
 # Execute Spark Streaming job with a writable Ivy cache
-docker exec -it ${SPARK_CONTAINER} \
+docker exec ${SPARK_CONTAINER} \
   ${SPARK_SUBMIT} \
   --packages ${KAFKA_PACKAGE} \
-  --master local[*] \
+  --master spark://spark-master:7077 \
+  --deploy-mode client \
+  --conf spark.cores.max=2 \
+  --conf spark.executor.memory=1g \
   --conf spark.jars.ivy=/tmp/.ivy2 \
   ${APP_PATH}
 
