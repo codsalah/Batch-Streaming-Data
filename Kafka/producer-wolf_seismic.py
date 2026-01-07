@@ -4,8 +4,15 @@ import os
 import websockets
 from kafka import KafkaProducer
 from dotenv import load_dotenv
+# =======================================
+from prometheus_client import start_http_server, Counter, Gauge
+import time
+# =======================================
 
 load_dotenv()
+
+# ===== Prometheus Metrics Configuration =====
+METRICS_PORT = 8001   
 
 # ===== Kafka Configuration =====
 KAFKA_BROKER = os.getenv('KAFKA_BROKER')
@@ -33,10 +40,25 @@ except Exception as e:
 
 async def stream_seismic_data():
     print(f"Connecting to Wolf API at {WOLF_URL}...")
+    
+    # =====================================
+    # counters
+    messages_sent = Counter('wolf_messages_total', 
+                           'Total wolf seismic messages sent')
+    websocket_connected = Gauge('wolf_websocket_connected',
+                               'WebSocket connection status (1=connected, 0=disconnected)')
+    connection_errors = Counter('wolf_connection_errors_total',
+                               'Total connection errors')
+    # =======================================
+    
     while True:
         try:
             async with websockets.connect(WOLF_URL) as websocket:
                 print("Connected to Wolf API")
+                # =======================================
+                websocket_connected.set(1)   
+                # =======================================
+                
                 while True:
                     try:
                         message = await websocket.recv()
@@ -59,19 +81,39 @@ async def stream_seismic_data():
                              key = str(data['Station'])
                         
                         producer.send(TOPIC, key=key, value=data)
+                        # =======================================
+                        messages_sent.inc()  # increment message counter
+                        # =======================================
                         print(f"Sent message to Kafka: {str(data)[:100]}...")
 
                     except websockets.exceptions.ConnectionClosed:
                         print("WebSocket connection closed")
+                        # =======================================
+                        websocket_connected.set(0)  # set to disconnected
+                        # =======================================
                         break
                     except Exception as e:
                         print(f"Error processing message: {e}")
+                        # =======================================
+                        connection_errors.inc()   
+                        # =======================================
                         
         except Exception as e:
             print(f"Connection error: {e}. Retrying in 5 seconds...")
+            # =======================================
+            websocket_connected.set(0)  # set to disconnected
+            connection_errors.inc()     # inc error counter
+            # =======================================
             await asyncio.sleep(5)
 
 if __name__ == "__main__":
+    # =======================================
+    # Starting Metrics Server
+    start_http_server(METRICS_PORT)
+    print(f"Wolf Producer - Metrics server started on port {METRICS_PORT}")
+    print(f"View metrics at: http://localhost:{METRICS_PORT}/metrics")
+    # =======================================
+    
     try:
         asyncio.run(stream_seismic_data())
     except KeyboardInterrupt:
