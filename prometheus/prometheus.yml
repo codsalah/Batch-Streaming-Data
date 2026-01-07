@@ -1,11 +1,44 @@
 global:
   scrape_interval: 10s
+  evaluation_interval: 10s
 
 scrape_configs:
+  # Kafka JMX Metrics
   - job_name: 'kafka'
     static_configs:
       - targets: ['kafka:9404']
-  - job_name: 'spark'
-    metrics_path: /metrics/executors/prometheus
+    scrape_interval: 5s
+
+  # Spark Master
+  - job_name: 'spark-master'
     static_configs:
-      - targets: ['spark-master:4040', 'spark-master:4041']
+      - targets: ['spark-master:8080']
+    metrics_path: /metrics/executors/prometheus
+    scrape_interval: 10s
+
+  # Spark Workers
+  - job_name: 'spark-workers'
+    static_configs:
+      - targets: 
+        - 'spark-worker-1:4040'
+        - 'spark-worker-2:4040'
+    metrics_path: /metrics/executors/prometheus
+    scrape_interval: 10s
+
+  # Python Producers 
+  - job_name: 'python-producers'
+    static_configs:
+      - targets: 
+        - 'host.docker.internal:8000'  # Earthquake Producer
+        - 'host.docker.internal:8001'  # Wolf Producer
+    scrape_interval: 10s
+    # Windows + Docker
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "windows-producer-${1}"
+
+  # Prometheus    
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
