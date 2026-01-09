@@ -2,8 +2,12 @@
 # Start Earthquake Producer
 echo "Starting Earthquake Producer..."
 
+# Determine log file location
+LOG_FILE="local_logs/earthquake_producer.log"
+mkdir -p local_logs
+
 # Run the producer in the background
-nohup python3 /opt/airflow/Kafka/producer-earthquakes.py > /opt/airflow/logs/earthquake_producer.log 2>&1 &
+PYTHONUNBUFFERED=1 nohup python3 Kafka/producer-earthquakes.py > "$LOG_FILE" 2>&1 &
 PRODUCER_PID=$!
 
 echo "Earthquake Producer started with PID: $PRODUCER_PID"
