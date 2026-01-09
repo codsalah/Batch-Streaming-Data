@@ -12,3 +12,4 @@ earthquake_consumer.log
 wolf_consumer.log
 .AccessPoints
 local_logs/
+*.log
