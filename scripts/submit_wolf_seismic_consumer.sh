@@ -3,11 +3,12 @@
 echo "Submitting Wolf Seismic Consumer to Spark..."
 
 # Submit the Spark job
-docker exec spark-master spark-submit \
+docker exec -u root spark-master spark-submit \
     --master spark://spark-master:7077 \
     --deploy-mode client \
     --name WolfSeismicConsumer \
-    --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,io.delta:delta-core_2.12:2.4.0 \
+    --total-executor-cores 1 \
+    --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,io.delta:delta-spark_2.12:3.0.0 \
     --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" \
     --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog" \
     /opt/spark/consumers/spark_wolf_seismic_consumer.py &
