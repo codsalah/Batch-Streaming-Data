@@ -9,12 +9,18 @@ from kafka import KafkaProducer
 from prometheus_client import start_http_server, Counter, Gauge
 import time
 # =======================================
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ===== Prometheus Metrics Configuration =====
-METRICS_PORT = 8000  
+METRICS_PORT = int(os.getenv('EARTHQUAKE_METRICS_PORT', '8000'))
 
 # ===== Kafka Configuration =====
-KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9093')
+KAFKA_BROKER = os.getenv('KAFKA_BROKER')
+if not KAFKA_BROKER:
+    external_port = os.getenv('KAFKA_EXTERNAL_PORT', '9098')
+    KAFKA_BROKER = f"localhost:{external_port}"
 TOPIC = os.getenv('KAFKA_TOPIC_EARTHQUAKE', 'earthquake_raw')
 
 producer = KafkaProducer(
