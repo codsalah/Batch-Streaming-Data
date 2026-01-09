@@ -3,3 +3,4 @@ kafka-python
 websockets
 python-dotenv
 prometheus-client
+requests
