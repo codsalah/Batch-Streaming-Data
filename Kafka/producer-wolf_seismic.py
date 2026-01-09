@@ -12,13 +12,12 @@ import time
 load_dotenv()
 
 # ===== Prometheus Metrics Configuration =====
-METRICS_PORT = 8001   
+METRICS_PORT = int(os.getenv('WOLF_METRICS_PORT', '8001'))
 
 # ===== Kafka Configuration =====
 KAFKA_BROKER = os.getenv('KAFKA_BROKER')
 if not KAFKA_BROKER:
-    # If KAFKA_BROKER is not set, try KAFKA_EXTERNAL_PORT (host:port assumption)
-    external_port = os.getenv('KAFKA_EXTERNAL_PORT', '9093')
+    external_port = os.getenv('KAFKA_EXTERNAL_PORT', '9098')
     KAFKA_BROKER = f"localhost:{external_port}"
 
 TOPIC = os.getenv('KAFKA_TOPIC_WOLF', 'wolf_seismic_stream')
