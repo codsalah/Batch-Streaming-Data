@@ -67,20 +67,21 @@ def main():
     # Join Stream (Quakes) with Static (Airports)
     proximity_df = quakes.crossJoin(airports) \
         .withColumn("distance_km", distance_udf(col("q_lat"), col("q_lon"), col("a_lat"), col("a_lon"))) \
-        .filter(col("distance_km") < 40000) # Increased to 40,000km for testing
+        .filter(col("distance_km") < 5000) # Threshold set to 5000km for testing
 
     # Output Results
+    print("Writing proximity events to Delta Table...")
     query = proximity_df.select(
         current_timestamp().alias("analysis_time"),
         col("airport_name"),
         col("magnitude"),
         col("region"),
-        round(col("distance_km"), 2).alias("dist_km")
+        col("distance_km").alias("dist_km")
     ).writeStream \
      .outputMode("append") \
-     .format("console") \
-     .option("truncate", "false") \
-     .start()
+     .format("delta") \
+     .option("checkpointLocation", "/opt/delta-lake/checkpoints/proximity_events") \
+     .start("/opt/delta-lake/tables/proximity_events")
 
     query.awaitTermination()
 

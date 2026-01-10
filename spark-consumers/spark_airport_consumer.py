@@ -5,7 +5,7 @@ from pyspark.sql.functions import (
     col, from_json, current_timestamp, current_date
 )
 from pyspark.sql.types import (
-    StructType, StructField, StringType, DoubleType
+    StructType, StructField, StringType, DoubleType, IntegerType
 )
 
 # Kafka & Delta Configuration
@@ -16,12 +16,27 @@ TABLE_PATH = "/opt/delta-lake/tables/airports"
 
 # Schema for Airport Data
 airport_schema = StructType([
-    StructField("ICAO", StringType(), True),
+    StructField("id", IntegerType(), True),
+    StructField("ident", StringType(), True),
+    StructField("icao", StringType(), True),
+    StructField("iata", StringType(), True),
+    StructField("gps_code", StringType(), True),
+    StructField("local_code", StringType(), True),
     StructField("name", StringType(), True),
-    StructField("last_update", StringType(), True),
-    StructField("url", StringType(), True),
-    StructField("lat", DoubleType(), True),
-    StructField("lon", DoubleType(), True)
+    StructField("latitude", DoubleType(), True),
+    StructField("longitude", DoubleType(), True),
+    StructField("elevation", DoubleType(), True),
+    StructField("continent", StringType(), True),
+    StructField("country", StringType(), True),
+    StructField("region", StringType(), True),
+    StructField("municipality", StringType(), True),
+    StructField("scheduled_service", StringType(), True),
+    StructField("web_url", StringType(), True),
+    StructField("wikipedia_url", StringType(), True),
+    StructField("keywords", StringType(), True),
+    StructField("timezone", StringType(), True),
+    StructField("airport_type", StringType(), True),
+    StructField("last_update", StringType(), True)
 ])
 
 def create_spark_session():
