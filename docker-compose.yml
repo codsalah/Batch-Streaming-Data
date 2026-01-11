@@ -229,6 +229,7 @@ services:
       - "${SPARK_APP_UI_PORT}:${SPARK_APP_UI_PORT}"
     volumes:
       - ./data/spark:/opt/spark/work
+      - ./data/airports.csv:/data/airports.csv
       - ./scripts:/opt/spark/scripts
       - ./spark-consumers:/opt/spark/consumers
       - ./delta-lake:/opt/delta-lake
@@ -249,6 +250,7 @@ services:
       - "${SPARK_WORKER_WEBUI_PORT_1}:8081"
     volumes:
       - ./data/spark:/opt/spark/work
+      - ./data/airports.csv:/data/airports.csv
       - ./scripts:/opt/spark/scripts
       - ./spark-consumers:/opt/spark/consumers
       - ./delta-lake:/opt/delta-lake
@@ -269,6 +271,7 @@ services:
       - "${SPARK_WORKER_WEBUI_PORT_2}:8081"
     volumes:
       - ./data/spark:/opt/spark/work
+      - ./data/airports.csv:/data/airports.csv
       - ./scripts:/opt/spark/scripts
       - ./spark-consumers:/opt/spark/consumers
       - ./delta-lake:/opt/delta-lake
