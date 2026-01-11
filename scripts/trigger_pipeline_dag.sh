@@ -13,30 +13,18 @@ DAGS=(
     "airport_batch_dag"  
 )
 
-# Find Airflow CLI
-if command -v airflow >/dev/null 2>&1; then
-    AIRFLOW_CMD="airflow"
-elif [[ -f "$HOME/.local/bin/airflow" ]]; then
-    AIRFLOW_CMD="$HOME/.local/bin/airflow"
-elif [[ -f "/usr/local/bin/airflow" ]]; then
-    AIRFLOW_CMD="/usr/local/bin/airflow"
-else
-    echo "ERROR: Airflow CLI not found"
-    exit 1
-fi
-
-echo "Airflow CLI found at: $AIRFLOW_CMD"
-echo
+# Airflow container name
+AIRFLOW_CONTAINER="airflow-webserver"
 
 # Trigger each DAG
 for DAG_ID in "${DAGS[@]}"; do
     echo "Checking DAG: $DAG_ID"
-    $AIRFLOW_CMD dags list | grep -q "$DAG_ID" || {
+    docker exec -it $AIRFLOW_CONTAINER airflow dags list | grep -q "$DAG_ID" || {
         echo "ERROR: DAG '$DAG_ID' not found in Airflow"
         continue
     }
     echo "Triggering DAG: $DAG_ID"
-    $AIRFLOW_CMD dags trigger "$DAG_ID"
+    docker exec -it $AIRFLOW_CONTAINER airflow dags trigger "$DAG_ID"
     echo "-------------------------------------------"
 done
 
