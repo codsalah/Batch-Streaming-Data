@@ -25,8 +25,8 @@ jobs:
         run: |
           set -e  # stop job on first error
 
-          # Get all files modified compared to main branch
-          MODIFIED_FILES=$(git diff --name-only origin/main...HEAD || true)
+          # Get all files from the current push or PR commit
+          MODIFIED_FILES=$(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA)
 
           if [ -z "$MODIFIED_FILES" ]; then
             echo "No modified files to check."
