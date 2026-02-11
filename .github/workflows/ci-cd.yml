@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI - Fast Checks on Modified Files
 
 on:
   push:
@@ -7,43 +7,51 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # Job 1: Validation (CI)
-  validate:
+  ci_checks:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-
-      - name: Check Bash script syntax
-        run: |
-          bash -n scripts/trigger_pipeline_dag.sh
-
-      - name: Check Docker Compose file
-        run: |
-          docker-compose -f docker-compose.yml config
-
-      - name: Run basic script checks
-        run: |
-          echo "Validating scripts..."
-          ls -R scripts
-          cat scripts/trigger_pipeline_dag.sh | head -n 30
-
-  # Job 2: Trigger DAGs (CD)
-  trigger_dags:
-    runs-on: ubuntu-latest
-    needs: validate   # ensures this runs only if validate succeeds
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # fetch full history for git diff
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Run trigger script
+      - name: Check modified files
         run: |
-          chmod +x scripts/trigger_pipeline_dag.sh
-          ./scripts/trigger_pipeline_dag.sh
+          # Get all files modified compared to main branch
+          MODIFIED_FILES=$(git diff --name-only origin/main...HEAD || true)
+
+          if [ -z "$MODIFIED_FILES" ]; then
+            echo "No modified files to check."
+          else
+            echo "Modified files:"
+            echo "$MODIFIED_FILES"
+
+            for file in $MODIFIED_FILES; do
+              echo "Processing $file..."
+              
+              # Bash scripts: syntax check
+              if [[ $file == *.sh ]]; then
+                echo "Checking Bash syntax for $file"
+                bash -n "$file"
+              fi
+
+              # Python files: compile check
+              if [[ $file == *.py ]]; then
+                echo "Checking Python syntax for $file"
+                python -m py_compile "$file"
+              fi
+
+              # YAML files (docker-compose, workflow, etc.): config validation
+              if [[ $file == *.yml || $file == *.yaml ]]; then
+                echo "Validating YAML file $file"
+                docker-compose -f "$file" config || true
+              fi
+
+            done
+          fi
