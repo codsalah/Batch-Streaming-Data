@@ -23,8 +23,9 @@ jobs:
 
       - name: Check modified files
         run: |
+          set -e  # stop job on first error
+
           # Get all files modified compared to main branch
-          set -e  # stop execution on first error
           MODIFIED_FILES=$(git diff --name-only origin/main...HEAD || true)
 
           if [ -z "$MODIFIED_FILES" ]; then
@@ -39,19 +40,19 @@ jobs:
               # Bash scripts: syntax check
               if [[ $file == *.sh ]]; then
                 echo "Checking Bash syntax for $file"
-                bash -n "$file"
+                bash -n "$file"  # if syntax wrong, job fails
               fi
 
               # Python files: compile check
               if [[ $file == *.py ]]; then
                 echo "Checking Python syntax for $file"
-                python -m py_compile "$file"
+                python -m py_compile "$file"  # if syntax wrong, job fails
               fi
 
               # YAML files (docker-compose, workflow, etc.): config validation
               if [[ $file == *.yml || $file == *.yaml ]]; then
                 echo "Validating YAML file $file"
-                docker-compose -f "$file" config || true
+                docker-compose -f "$file" config  # if invalid, job fails
               fi
 
             done
