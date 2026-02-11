@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0   # fetch full history for git diff
+          fetch-depth: 0  # fetch full history for git diff
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -32,27 +32,28 @@ jobs:
             echo "No modified files to check."
           else
             echo "Modified files:"
-            echo "$MODIFIED_FILES"
+            echo "$MODIFIED_FILES" | cat -A  # shows hidden chars and spaces
 
+            IFS=$'\n'  # handle filenames with spaces
             for file in $MODIFIED_FILES; do
-              echo "Processing $file..."
-              
+              echo "Processing '$file'..."
+
               # Bash scripts: syntax check
               if [[ $file == *.sh ]]; then
                 echo "Checking Bash syntax for $file"
-                bash -n "$file"  # if syntax wrong, job fails
+                bash -n "$file" || exit 1
               fi
 
               # Python files: compile check
               if [[ $file == *.py ]]; then
                 echo "Checking Python syntax for $file"
-                python -m py_compile "$file"  # if syntax wrong, job fails
+                python -m py_compile "$file" || exit 1
               fi
 
               # YAML files (docker-compose, workflow, etc.): config validation
               if [[ $file == *.yml || $file == *.yaml ]]; then
                 echo "Validating YAML file $file"
-                docker-compose -f "$file" config  # if invalid, job fails
+                docker-compose -f "$file" config || exit 1
               fi
 
             done
