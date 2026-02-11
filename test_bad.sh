@@ -1,6 +1,7 @@
-#!/bin/bash
-echo "This is a test
-if [ 1 -eq 1 ]; then
-  echo "Hello"
+# broken_script.sh
+
+echo "Starting script"
+
+if [ 1 -eq 1 ]   # Missing `then`
+  echo "This will fail"
 fi
- 
