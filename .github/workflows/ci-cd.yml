@@ -24,6 +24,7 @@ jobs:
       - name: Check modified files
         run: |
           # Get all files modified compared to main branch
+          set -e  # stop execution on first error
           MODIFIED_FILES=$(git diff --name-only origin/main...HEAD || true)
 
           if [ -z "$MODIFIED_FILES" ]; then
