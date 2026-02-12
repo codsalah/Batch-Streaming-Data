@@ -21,21 +21,34 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
+<<<<<<< HEAD
+=======
+        with:
+          fetch-depth: 0
+>>>>>>> 119802f (fix: remove docker-compose dependency from CI workflow)
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
+<<<<<<< HEAD
       - name: Install YAML Validator
         run: pip install pyyaml
 
       - name: Check Python Syntax
+=======
+      - name: Install YAML validator
+        run: pip install pyyaml
+
+      - name: Check modified files
+>>>>>>> 119802f (fix: remove docker-compose dependency from CI workflow)
         run: |
           for file in $(git ls-files '*.py'); do
             python -m py_compile "$file"
           done
 
+<<<<<<< HEAD
       - name: Validate YAML Syntax
         run: |
           for file in $(git ls-files '*.yml' '*.yaml'); do
@@ -70,6 +83,37 @@ jobs:
           AIRFLOW_LOAD_EXAMPLES=false
           AIRFLOW_EXPOSE_CONFIG=true
           AIRFLOW_WEBSERVER_EXTERNAL_PORT=8087
+=======
+          # Get all files from the current commit
+          MODIFIED_FILES=$(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA)
+
+          if [ -z "$MODIFIED_FILES" ]; then
+            echo "No modified files to check."
+          else
+            echo "Modified files:"
+            echo "$MODIFIED_FILES"
+
+            echo "$MODIFIED_FILES" | while IFS= read -r file; do
+              echo "Processing '$file'..."
+
+              # Bash scripts: syntax check
+              if [[ $file == *.sh ]]; then
+                echo "Checking Bash syntax for $file"
+                bash -n "$file"
+              fi
+
+              # Python files: compile check
+              if [[ $file == *.py ]]; then
+                echo "Checking Python syntax for $file"
+                python -m py_compile "$file"
+              fi
+
+              # YAML files: syntax validation using PyYAML
+              if [[ $file == *.yml || $file == *.yaml ]]; then
+                echo "Validating YAML syntax for $file"
+                python -c "import yaml; yaml.safe_load(open('$file'))"
+              fi
+>>>>>>> 119802f (fix: remove docker-compose dependency from CI workflow)
 
           AIRFLOW_ADMIN_USER=admin
           AIRFLOW_ADMIN_PASSWORD=${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
