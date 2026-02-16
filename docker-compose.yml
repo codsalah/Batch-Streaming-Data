@@ -323,8 +323,13 @@ services:
     networks:
       - data-pipeline
     # ============================================
+<<<<<<< HEAD
     # DWH Runner - Execute SQL & Python Jobs
     # ============================================
+=======
+  # DWH Runner - Execute SQL & Python Jobs
+  # ============================================
+>>>>>>> a4cefdc (feat: add dwh-runner service)
   dwh-runner:
     build: .
     container_name: dwh-runner
@@ -343,6 +348,10 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
       - data-pipeline
+<<<<<<< HEAD
+=======
+
+>>>>>>> a4cefdc (feat: add dwh-runner service)
 
 volumes:
   postgres_data:
