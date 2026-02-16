@@ -300,6 +300,28 @@ services:
       - prometheus
     networks:
       - data-pipeline
+    # ============================================
+  # DWH Runner - Execute SQL & Python Jobs
+  # ============================================
+  dwh-runner:
+    build: .
+    container_name: dwh-runner
+    hostname: dwh-runner
+    depends_on:
+      postgres:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DB_HOST: postgres
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - data-pipeline
+
 
 volumes:
   postgres_data:
