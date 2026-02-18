@@ -58,10 +58,10 @@ def main():
         .format("delta") \
         .load(AIRPORTS_TABLE) \
         .select(
-            col("ICAO").alias("airport_id"),
+            col("icao").alias("airport_id"),
             col("name").alias("airport_name"),
-            col("lat").alias("a_lat"),
-            col("lon").alias("a_lon")
+            col("latitude").alias("a_lat"),
+            col("longitude").alias("a_lon")
         ).dropDuplicates(["airport_id"])
 
     # Join Stream (Quakes) with Static (Airports)
