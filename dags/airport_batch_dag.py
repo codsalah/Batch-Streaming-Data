@@ -19,18 +19,22 @@ default_args = {
 # Optional: Check Spark container
 # ---------------------------
 def check_spark_container():
+    # Use environment variables from Airflow environment
+    import os
+    spark_master = os.getenv('SPARK_MASTER_CONTAINER', 'spark-master')
+    
     try:
         result = subprocess.run(
-            ["docker", "ps", "--filter", "name=spark-master", "--quiet"],
+            ["docker", "ps", "--filter", f"name={spark_master}", "--quiet"],
             capture_output=True,
             text=True,
             timeout=10
         )
 
         if not result.stdout.strip():
-            raise AirflowException("spark-master container is NOT running")
+            raise AirflowException(f"{spark_master} container is NOT running")
 
-        print(f"spark-master container running (ID: {result.stdout.strip()})")
+        print(f"{spark_master} container running (ID: {result.stdout.strip()})")
         return True
 
     except subprocess.TimeoutExpired:

@@ -51,6 +51,8 @@ services:
       KAFKA_BROKER: kafka:${KAFKA_INTERNAL_PORT}
       PYTHONPATH: /home/airflow/.local/lib/python3.10/site-packages
       PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    env_file:
+      - .env
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -58,9 +60,10 @@ services:
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
       - ./Kafka:/opt/airflow/Kafka
+      - ./.env:/opt/airflow/.env
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "8087:8080"
+      - "${AIRFLOW_WEBSERVER_EXTERNAL_PORT:-8087}:8080"
     command: webserver
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://localhost:8080/health" ]
@@ -88,6 +91,8 @@ services:
       KAFKA_BROKER: kafka:${KAFKA_INTERNAL_PORT}
       PYTHONPATH: /home/airflow/.local/lib/python3.10/site-packages
       PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    env_file:
+      - .env
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -95,6 +100,7 @@ services:
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
       - ./Kafka:/opt/airflow/Kafka
+      - ./.env:/opt/airflow/.env
       - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler
     healthcheck:
@@ -205,7 +211,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
-      - "${KAFKA_UI_PORT}:8080"
+      - "${KAFKA_UI_EXTERNAL_PORT:-8088}:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:${KAFKA_INTERNAL_PORT}
@@ -224,7 +230,7 @@ services:
     hostname: spark-master
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
     ports:
-      - "8082:${SPARK_MASTER_WEBUI_PORT}"
+      - "${SPARK_MASTER_UI_EXTERNAL_PORT:-8082}:${SPARK_MASTER_WEBUI_PORT}"
       - "${SPARK_MASTER_PORT}:${SPARK_MASTER_PORT}"
       - "${SPARK_APP_UI_PORT}:${SPARK_APP_UI_PORT}"
     volumes:
@@ -301,8 +307,8 @@ services:
     networks:
       - data-pipeline
     # ============================================
-  # DWH Runner - Execute SQL & Python Jobs
-  # ============================================
+    # DWH Runner - Execute SQL & Python Jobs
+    # ============================================
   dwh-runner:
     build: .
     container_name: dwh-runner
@@ -321,7 +327,6 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
       - data-pipeline
-
 
 volumes:
   postgres_data:
