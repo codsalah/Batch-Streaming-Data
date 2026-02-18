@@ -7,10 +7,12 @@ from pyspark.sql.types import (
 import os
 
 # ===============================
-# Kafka Configuration
+# Configuration from Environment
 # ===============================
-KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_INTERNAL_PORT', 'kafka:9092')
-KAFKA_TOPIC = "wolf_seismic_stream"
+KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BROKER', 'kafka:9092')
+KAFKA_TOPIC = os.getenv('KAFKA_TOPIC_WOLF', 'wolf_seismic_stream')
+DELTA_TABLE_PATH = os.getenv('WOLF_DELTA_TABLE_PATH', '/opt/delta-lake/tables/wolf_seismic')
+CHECKPOINT_PATH = os.getenv('WOLF_CHECKPOINT_PATH', '/opt/delta-lake/checkpoints/wolf_seismic')
 
 # ===============================
 # Wolf Seismic Data Schema
@@ -144,8 +146,8 @@ def main():
         clean_df.writeStream
         .outputMode("append")
         .format("delta")
-        .option("checkpointLocation", "/opt/delta-lake/checkpoints/wolf_seismic")
-        .start("/opt/delta-lake/tables/wolf_seismic")
+        .option("checkpointLocation", CHECKPOINT_PATH)
+        .start(DELTA_TABLE_PATH)
     )
 
     print("Wolf seismic stream is running...")
