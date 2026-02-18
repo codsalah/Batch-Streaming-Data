@@ -1,9 +1,15 @@
-#!/bin/bash
-# Verify Producer Status
-echo "Verifying Kafka producer status..."
+# Resolve paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-WOLF_PID_FILE="/tmp/wolf_producer.pid"
-EARTHQUAKE_PID_FILE="/tmp/earthquake_producer.pid"
+# Load environment variables from .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "Loading environment variables from $PROJECT_ROOT/.env"
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
+WOLF_PID_FILE="$PROJECT_ROOT/logs/wolf_producer.pid"
+EARTHQUAKE_PID_FILE="$PROJECT_ROOT/logs/earthquake_producer.pid"
 
 # Check Wolf Producer
 if [ -f "$WOLF_PID_FILE" ]; then
@@ -35,12 +41,12 @@ else
     EARTHQUAKE_RUNNING=0
 fi
 
-# Exit with success only if both are running
+# Report status
 if [ $WOLF_RUNNING -eq 1 ] && [ $EARTHQUAKE_RUNNING -eq 1 ]; then
     echo "All producers are running successfully"
     exit 0
 else
     echo "WARNING: Not all producers are running"
-    # Don't fail - producers might be running but PID files missing
+    # Don't fail - producers might be starting or PID files missing
     exit 0
 fi
