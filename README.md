@@ -64,37 +64,35 @@ A unified data pipeline that ingests real-time seismic events and airport data, 
 - Docker 20.10+
 - Docker Compose 2.20+
 
-### Installation
+### Installation & Configuration
 
-1. **Clone and Setup**
+1. **Clone the Project**
    ```bash
    git clone <repository-url>
-   cd seismic-data-pipeline
+   cd Batch-Streaming-Data
    ```
 
-2. **Configure Environment Variables**
+2. **Setup Environment Variables (Mandatory)**
+   The project is designed to be fully portable. All configurations are managed via the `.env` file.
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
    ```
+   Open `.env` and adjust settings for your system (ports, memory, container names, etc.). The defaults in `.env.example` are suitable for most local setups.
 
-3. **Start the Pipeline**
+   > [!IMPORTANT]
+   > Do NOT commit your `.env` file to Git. It is already included in `.gitignore`.
+
+3. **Start the Infrastructure**
    ```bash
    docker-compose up -d
    ```
 
-4. **Initialize Airflow**
-   ```bash
-   docker exec airflow-webserver airflow db upgrade
-   ```
-
-### Service Ports
-After startup, access services at:
-- **Airflow UI**: http://localhost:8087 (admin/admin)
-- **Spark Master UI**: http://localhost:8082
-- **Kafka UI**: http://localhost:8088
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9099
+4. **Access the Services**
+   All services will use the ports defined in your `.env` file. By default:
+   - **Airflow UI**: http://localhost:8087 (admin/admin)
+   - **Spark Master UI**: http://localhost:8082
+   - **Kafka UI**: http://localhost:8081
+   - **Grafana**: http://localhost:3000 (admin/admin)
  
 
 

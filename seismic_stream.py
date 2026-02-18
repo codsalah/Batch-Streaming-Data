@@ -14,10 +14,10 @@ import asyncio
 import websockets
 
 
-# WebSocket endpoint for real-time seismic events
-SEISMIC_WS_URL = 'wss://www.seismicportal.eu/standing_order/websocket'
-PING_INTERVAL = 15
-CSV_FILENAME = 'seismic_events.csv'
+# Configuration from Environment Variables or Defaults
+SEISMIC_WS_URL = os.getenv('SEISMIC_WS_URL', 'wss://www.seismicportal.eu/standing_order/websocket')
+PING_INTERVAL = int(os.getenv('SEISMIC_WS_PING_INTERVAL', '15'))
+CSV_FILENAME = os.getenv('SEISMIC_CSV_FILENAME', 'seismic_events.csv')
 
 # CSV Headers
 CSV_HEADERS = [

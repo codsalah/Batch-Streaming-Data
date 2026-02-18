@@ -1,10 +1,21 @@
-#!/bin/bash
-# Submit Wolf Seismic Consumer to Spark
-echo "Submitting Wolf Seismic Consumer to Spark..."
+# Resolve paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "Loading environment variables from $PROJECT_ROOT/.env"
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
+# Use environment variables with defaults
+SPARK_MASTER="${SPARK_MASTER_CONTAINER:-spark-master}"
+SPARK_PORT="${SPARK_MASTER_PORT:-7077}"
+SPARK_WEBUI_PORT="${SPARK_MASTER_WEBUI_PORT:-8080}"
 
 # Submit the Spark job
-docker exec -u root spark-master spark-submit \
-    --master spark://spark-master:7077 \
+docker exec -u root "${SPARK_MASTER}" spark-submit \
+    --master "spark://${SPARK_MASTER}:${SPARK_PORT}" \
     --deploy-mode client \
     --name WolfSeismicConsumer \
     --total-executor-cores 1 \
@@ -20,7 +31,7 @@ echo "Spark submit initiated with PID: $SUBMIT_PID"
 sleep 10
 
 # Check if submission was successful by querying Spark Master
-if curl -s http://spark-master:8080/json/ | grep -q "WolfSeismicConsumer"; then
+if curl -s "http://${SPARK_MASTER}:${SPARK_WEBUI_PORT}/json/" | grep -q "WolfSeismicConsumer"; then
     echo "✓ Wolf Seismic Consumer submitted successfully"
     exit 0
 else

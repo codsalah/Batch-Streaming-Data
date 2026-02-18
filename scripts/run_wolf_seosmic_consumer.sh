@@ -7,8 +7,19 @@ echo "=================================================="
 echo "Starting Wolf Seismic Spark Streaming Consumer"
 echo "=================================================="
 
-# Docker container name (Spark Master)
-SPARK_CONTAINER="spark-master"
+# Resolve paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "Loading environment variables from $PROJECT_ROOT/.env"
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
+# Use environment variables with defaults
+SPARK_CONTAINER="${SPARK_MASTER_CONTAINER:-spark-master}"
+SPARK_PORT="${SPARK_MASTER_PORT:-7077}"
 
 # Path to Spark submit inside container
 SPARK_SUBMIT="/opt/spark/bin/spark-submit"
@@ -24,7 +35,7 @@ KAFKA_PACKAGE="org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,io.delta:delta-s
 docker exec ${SPARK_CONTAINER} \
   ${SPARK_SUBMIT} \
   --packages ${KAFKA_PACKAGE} \
-  --master spark://spark-master:7077 \
+  --master "spark://${SPARK_CONTAINER}:${SPARK_PORT}" \
   --deploy-mode client \
   --conf spark.cores.max=2 \
   --conf spark.executor.memory=1g \
