@@ -124,9 +124,10 @@ jobs:
           # done
           echo "All DAGs triggered successfully!"
 
-    
+     
       - name: Cleanup Docker
         if: always()
         run: |
           echo "Cleaning up Docker containers..."
-          docker compose -f docker-compose.dev.yml down
+          docker compose -f docker-compose.dev.yml down || true
+          echo "Docker cleanup completed (if compose file was found)."
