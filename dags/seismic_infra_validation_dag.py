@@ -59,13 +59,13 @@ with DAG(
         verify_zookeeper_health = BashOperator(
             task_id="verify_zookeeper_health",
             # this is to check if zookeeper is running and accessible if not it will exit with 1
-            bash_command="python3 -c \"import socket; s = socket.socket(); s.settimeout(5); result = s.connect_ex(('zookeeper', 2181)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Zookeeper Down' && exit 1)",
+            bash_command="python3 -c \"import socket; import os; s = socket.socket(); s.settimeout(5); zookeeper_host = os.getenv('ZOOKEEPER_HOST', 'zookeeper'); zookeeper_port = int(os.getenv('ZOOKEEPER_CLIENT_PORT', '2181')); result = s.connect_ex((zookeeper_host, zookeeper_port)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Zookeeper Down' && exit 1)",
         )
         
         verify_kafka_brokers = BashOperator(
             task_id="verify_kafka_brokers",
             # this is to check if kafka brokers are running and accessible if not it will exit with 1
-            bash_command="python3 -c \"import socket; s = socket.socket(); s.settimeout(5); result = s.connect_ex(('kafka', 9092)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Kafka Broker Down' && exit 1)",
+            bash_command="python3 -c \"import socket; import os; s = socket.socket(); s.settimeout(5); kafka_host = os.getenv('KAFKA_HOST', 'kafka'); kafka_port = int(os.getenv('KAFKA_INTERNAL_PORT', '9092')); result = s.connect_ex((kafka_host, kafka_port)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Kafka Broker Down' && exit 1)",
         )
 
         kafka_availability_sensor = BashOperator(
@@ -76,26 +76,26 @@ with DAG(
         
         # zookeeper ---> kafka brokers ---> kafka metadata
         verify_zookeeper_health >> verify_kafka_brokers >> kafka_availability_sensor
-
+    
     # Verify compute cluster availability, spark master, and worker slots
     with TaskGroup("verify_compute_cluster") as verify_compute_cluster:
 
         ping_spark_master = BashOperator(
             task_id="ping_spark_master",
             # this is to check if spark master is running and accessible if not it will exit with 1
-            bash_command="python3 -c \"import socket; s = socket.socket(); s.settimeout(5); result = s.connect_ex(('spark-master', 7077)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Spark Master Down' && exit 1)",
+            bash_command="python3 -c \"import socket; import os; s = socket.socket(); s.settimeout(5); spark_master = os.getenv('SPARK_MASTER_CONTAINER', 'spark-master'); spark_port = int(os.getenv('SPARK_MASTER_PORT', '7077')); result = s.connect_ex((spark_master, spark_port)); s.close(); exit(0 if result == 0 else 1)\" || (echo 'Spark Master Down' && exit 1)",
         )
 
         verify_worker_slots = BashOperator(
             task_id="verify_worker_slots",
             # this is to check if spark workers are running and accessible if not it will exit with 1
-            bash_command="curl -s http://spark-master:8080/json/ | grep -q 'workers' || (echo 'No Workers found' && exit 1)",
+            bash_command="spark_master=${SPARK_MASTER_CONTAINER:-spark-master}; spark_webui_port=${SPARK_MASTER_WEBUI_PORT:-8080}; curl -s http://${spark_master}:${spark_webui_port}/json/ | grep -q 'workers' || (echo 'No Workers found' && exit 1)",
         )
 
         check_spark_master_ui = BashOperator(
             task_id="check_spark_master_ui",
             # this is to check if spark master ui is running and accessible if not it will exit with 1
-            bash_command="curl -f http://spark-master:8080 || (echo 'Spark UI unreachable' && exit 1)",
+            bash_command="spark_master=${SPARK_MASTER_CONTAINER:-spark-master}; spark_webui_port=${SPARK_MASTER_WEBUI_PORT:-8080}; curl -f http://${spark_master}:${spark_webui_port} || (echo 'Spark UI unreachable' && exit 1)",
         )
 
         # spark master ---> spark workers ---> spark master ui
@@ -104,12 +104,12 @@ with DAG(
     with TaskGroup("verify_consumer_apps") as verify_consumer_apps:
         verify_wolf_seismic_consumer = BashOperator(
             task_id="verify_wolf_seismic_consumer",
-            bash_command="curl -s http://spark-master:8080/json/ | grep -q 'WolfSeismicConsumer' && echo 'WolfSeismicConsumer app is running' || echo 'WARNING: WolfSeismicConsumer app not found on Spark Master (this is OK if not started yet)'",
+            bash_command="spark_master=${SPARK_MASTER_CONTAINER:-spark-master}; spark_webui_port=${SPARK_MASTER_WEBUI_PORT:-8080}; curl -s http://${spark_master}:${spark_webui_port}/json/ | grep -q 'WolfSeismicConsumer' && echo 'WolfSeismicConsumer app is running' || echo 'WARNING: WolfSeismicConsumer app not found on Spark Master (this is OK if not started yet)'",
         )
 
         verify_earthquake_consumer = BashOperator(
             task_id="verify_earthquake_consumer",
-            bash_command="curl -s http://spark-master:8080/json/ | grep -q 'EarthquakeStreamProcessor' && echo 'EarthquakeStreamProcessor app is running' || echo 'WARNING: EarthquakeStreamProcessor app not found on Spark Master (this is OK if not started yet)'",
+            bash_command="spark_master=${SPARK_MASTER_CONTAINER:-spark-master}; spark_webui_port=${SPARK_MASTER_WEBUI_PORT:-8080}; curl -s http://${spark_master}:${spark_webui_port}/json/ | grep -q 'EarthquakeStreamProcessor' && echo 'EarthquakeStreamProcessor app is running' || echo 'WARNING: EarthquakeStreamProcessor app not found on Spark Master (this is OK if not started yet)'",
         )
 
     # kalam fady

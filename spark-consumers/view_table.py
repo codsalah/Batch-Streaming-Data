@@ -7,7 +7,7 @@ spark = SparkSession.builder \
     .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
     .getOrCreate()
 
-table_path = "/opt/delta-lake/tables/proximity_events"
+table_path = os.getenv("VIEW_TABLE_PATH", "/opt/delta-lake/tables/proximity_events")
 
 if os.path.exists(table_path):
     print(f"Viewing table: {table_path}")

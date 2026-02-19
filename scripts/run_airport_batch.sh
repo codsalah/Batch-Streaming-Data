@@ -8,10 +8,21 @@ date
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Load environment variables from .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "Loading environment variables from $PROJECT_ROOT/.env"
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
+# Use environment variables with defaults
+SPARK_MASTER="${SPARK_MASTER_CONTAINER:-spark-master}"
+KAFKA_PORT="${KAFKA_INTERNAL_PORT:-9092}"
+
 CSV_LOCAL="$PROJECT_ROOT/data/airports.csv"
 DELTA_LOCAL="$PROJECT_ROOT/data/delta_airports"
 
 echo "Project root: $PROJECT_ROOT"
+echo "Spark master container: $SPARK_MASTER"
 echo "CSV local: $CSV_LOCAL"
 echo "Delta local: $DELTA_LOCAL"
 
@@ -23,20 +34,20 @@ if [ ! -f "$CSV_LOCAL" ]; then
 fi
 
 # Validate Spark container
-echo "Checking spark-master container..."
-if ! docker ps --format '{{.Names}}' | grep -q '^spark-master$'; then
-    echo "ERROR: spark-master container is not running"
+echo "Checking $SPARK_MASTER container..."
+if ! docker ps --format '{{.Names}}' | grep -q "^${SPARK_MASTER}$"; then
+    echo "ERROR: $SPARK_MASTER container is not running"
     docker ps
     exit 1
 fi
 
 # Copy CSV to container
-echo "Copying CSV to spark-master..."
-docker cp "$CSV_LOCAL" spark-master:/opt/spark/work-dir/airports.csv
+echo "Copying CSV to $SPARK_MASTER..."
+docker cp "$CSV_LOCAL" "$SPARK_MASTER":/opt/spark/work-dir/airports.csv
 
 # Run Spark job
 echo "Submitting Spark job..."
-docker exec spark-master bash -c "
+docker exec "$SPARK_MASTER" bash -c "
 set -e
 
 if [ ! -f /opt/spark/work-dir/airports.csv ]; then
@@ -58,9 +69,9 @@ echo "Spark job completed with exit code: $SPARK_EXIT"
 
 # Copy Delta table back if success
 if [ $SPARK_EXIT -eq 0 ]; then
-    echo "Copying Delta table from spark-master..."
+    echo "Copying Delta table from $SPARK_MASTER..."
     rm -rf "$DELTA_LOCAL"
-    docker cp spark-master:/opt/delta-lake/delta_airports "$DELTA_LOCAL"
+    docker cp "$SPARK_MASTER":/opt/delta-lake/delta_airports "$DELTA_LOCAL"
 
     echo "Delta table copied successfully:"
     ls -la "$DELTA_LOCAL"

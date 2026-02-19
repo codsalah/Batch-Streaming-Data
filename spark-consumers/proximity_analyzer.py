@@ -8,8 +8,11 @@ from pyspark.sql.types import DoubleType
 import math
 
 # Configuration
-EARTHQUAKES_TABLE = "/opt/delta-lake/tables/earthquakes"
-AIRPORTS_TABLE = "/opt/delta-lake/tables/airports"
+# Configuration from Environment
+EARTHQUAKES_TABLE = os.getenv('EARTHQUAKE_DELTA_TABLE_PATH', '/opt/delta-lake/tables/earthquakes')
+AIRPORTS_TABLE = os.getenv('AIRPORT_DELTA_TABLE_PATH', '/opt/delta-lake/tables/airports')
+PROXIMITY_TABLE = os.getenv('PROXIMITY_DELTA_TABLE_PATH', '/opt/delta-lake/tables/proximity_events')
+PROXIMITY_CHECKPOINT = os.getenv('PROXIMITY_CHECKPOINT_PATH', '/opt/delta-lake/checkpoints/proximity_events')
 
 # Haversine distance UDF
 def haversine(lat1, lon1, lat2, lon2):
@@ -80,8 +83,8 @@ def main():
     ).writeStream \
      .outputMode("append") \
      .format("delta") \
-     .option("checkpointLocation", "/opt/delta-lake/checkpoints/proximity_events") \
-     .start("/opt/delta-lake/tables/proximity_events")
+     .option("checkpointLocation", PROXIMITY_CHECKPOINT) \
+     .start(PROXIMITY_TABLE)
 
     query.awaitTermination()
 

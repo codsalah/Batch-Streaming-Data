@@ -25,10 +25,14 @@ def check_spark_app_health():
     import subprocess
     import json
     
+    # Use environment variables from Airflow environment
+    spark_master = os.getenv('SPARK_MASTER_CONTAINER', 'spark-master')
+    spark_webui_port = os.getenv('SPARK_MASTER_WEBUI_PORT', '8080')
+    
     try:
         # Query Spark Master for running applications
         result = subprocess.run(
-            ["curl", "-s", "http://spark-master:8080/json/"],
+            ["curl", "-s", f"http://{spark_master}:{spark_webui_port}/json/"],
             capture_output=True,
             text=True,
             timeout=10
@@ -70,7 +74,7 @@ with DAG(
     # Pipeline Initialization
     trigger_pipeline_dag = BashOperator(
         task_id="trigger_pipeline_dag",
-        bash_command="bash /opt/airflow/scripts/trigger_pipeline_dag.sh ",
+        bash_command="bash /opt/airflow/scripts/start_pipeline.sh ",
     )
     
     # Ingestion Producers Task Group

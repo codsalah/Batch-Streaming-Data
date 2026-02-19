@@ -2,15 +2,48 @@
 # Start Earthquake Producer
 echo "Starting Earthquake Producer..."
 
-# Determine log file location
-LOG_FILE="/opt/airflow/logs/earthquake_producer.log"
+# Resolve paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "Loading environment variables from $PROJECT_ROOT/.env"
+    set -a
+    source "$PROJECT_ROOT/.env"
+    set +a
+fi
+
+# Determine paths
+PRODUCER_SCRIPT="$PROJECT_ROOT/Kafka/producer-earthquakes.py"
+LOG_FILE="$PROJECT_ROOT/logs/earthquake_producer.log"
+PID_FILE="$PROJECT_ROOT/logs/earthquake_producer.pid"
+
+# Cleanup existing process if running
+echo "Checking for existing Earthquake Producer..."
+if [ -f "$PID_FILE" ]; then
+    OLD_PID=$(cat "$PID_FILE")
+    if kill -0 "$OLD_PID" 2>/dev/null; then
+        echo "Stopping existing producer (PID: $OLD_PID)..."
+        kill "$OLD_PID"
+        sleep 2
+        kill -9 "$OLD_PID" 2>/dev/null || true
+    fi
+    rm -f "$PID_FILE"
+fi
+
+# Emergency cleanup by process name
+if [ ! -z "$EARTHQUAKE_METRICS_PORT" ]; then
+    echo "Ensuring port $EARTHQUAKE_METRICS_PORT is free..."
+fi
 
 # Run the producer in the background
-PYTHONUNBUFFERED=1 nohup python3 /opt/airflow/Kafka/producer-earthquakes.py > "$LOG_FILE" 2>&1 &
+echo "Running producer: $PRODUCER_SCRIPT"
+PYTHONUNBUFFERED=1 nohup python3 "$PRODUCER_SCRIPT" > "$LOG_FILE" 2>&1 &
 PRODUCER_PID=$!
 
 echo "Earthquake Producer started with PID: $PRODUCER_PID"
-echo $PRODUCER_PID > /tmp/earthquake_producer.pid
+echo $PRODUCER_PID > "$PID_FILE"
 
 # Wait a bit to ensure it started successfully
 sleep 5
@@ -20,6 +53,6 @@ if kill -0 $PRODUCER_PID 2>/dev/null; then
     echo "Earthquake Producer is running successfully"
     exit 0
 else
-    echo "ERROR: Earthquake Producer failed to start"
+    echo "ERROR: Earthquake Producer failed to start. Check logs at $LOG_FILE"
     exit 1
 fi

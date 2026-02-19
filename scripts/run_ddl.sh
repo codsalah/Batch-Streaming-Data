@@ -1,14 +1,18 @@
-#!/bin/bash
-set -e
- 
-APP_DIR="/app"
-DDL_FILE="$APP_DIR/dwh/ddl/create_tables.sql"
+# Resolve paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "Loading environment variables from $PROJECT_ROOT/.env"
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
 
 DB_HOST="${DB_HOST:-postgres}"
-DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-mydb}"
-DB_USER="${DB_USER:-user}"
-DB_PASSWORD="${DB_PASSWORD:-password}"
+DB_PORT="${POSTGRES_PORT:-${DB_PORT:-5432}}"
+DB_NAME="${POSTGRES_DB:-${DB_NAME:-mydb}}"
+DB_USER="${POSTGRES_USER:-${DB_USER:-user}}"
+DB_PASSWORD="${POSTGRES_PASSWORD:-${DB_PASSWORD:-password}}"
 
 echo "Creating DWH tables inside container..."
 

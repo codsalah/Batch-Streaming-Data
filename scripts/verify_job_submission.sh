@@ -1,9 +1,19 @@
-#!/bin/bash
-# Verify Spark Job Submission
-echo "Verifying Spark job submission status..."
+# Resolve paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Load environment variables from .env if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    echo "Loading environment variables from $PROJECT_ROOT/.env"
+    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
+# Use environment variables with defaults
+SPARK_MASTER="${SPARK_MASTER_CONTAINER:-spark-master}"
+SPARK_WEBUI_PORT="${SPARK_MASTER_WEBUI_PORT:-8080}"
 
 # Query Spark Master for running applications
-SPARK_JSON=$(curl -s http://spark-master:8080/json/)
+SPARK_JSON=$(curl -s "http://${SPARK_MASTER}:${SPARK_WEBUI_PORT}/json/")
 
 # Check for Wolf Seismic Consumer
 if echo "$SPARK_JSON" | grep -q "WolfSeismicConsumer"; then

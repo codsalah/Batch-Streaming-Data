@@ -11,10 +11,11 @@ from pyspark.sql.types import (
     TimestampType, ArrayType
 )
 
-KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_INTERNAL_PORT', 'kafka:9092')
+KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BROKER', 'kafka:9092')
 KAFKA_TOPIC = os.getenv('KAFKA_TOPIC', 'earthquake_raw')
 
-CHECKPOINT_LOCATION = os.getenv('CHECKPOINT_LOCATION', '/opt/delta-lake/checkpoints/earthquake_stream')
+DELTA_TABLE_PATH = os.getenv('EARTHQUAKE_DELTA_TABLE_PATH', '/opt/delta-lake/tables/earthquakes')
+CHECKPOINT_LOCATION = os.getenv('EARTHQUAKE_CHECKPOINT_PATH', '/opt/delta-lake/checkpoints/earthquakes')
 
 # schema of the incoming data (earthquake_raw)
 earthquake_schema = StructType([
@@ -188,8 +189,8 @@ def main():
     query = transformed_df.writeStream \
         .outputMode("append") \
         .format("delta") \
-        .option("checkpointLocation", "/opt/delta-lake/checkpoints/earthquakes") \
-        .start("/opt/delta-lake/tables/earthquakes")
+        .option("checkpointLocation", CHECKPOINT_LOCATION) \
+        .start(DELTA_TABLE_PATH)
     
     print("✓ Stream started successfully!")
     print("✓ Processing events every 10 seconds...")
