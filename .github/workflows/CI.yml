@@ -1,62 +1,97 @@
-name: CI - Fast Checks on Modified Files
+name: CI - Syntax and Pipeline Checks
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "development" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "development" ]
 
 jobs:
-  ci_checks:
+
+  # ==========================
+  # Job 1: Syntax Checks
+  # ==========================
+  syntax_checks:
+    name: "Syntax Checks"
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Set up Python
+      # Setup Python
+      - name: Setup Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install YAML validator
+      # Install YAML validator
+      - name: Install YAML Validator
         run: pip install pyyaml
 
-      - name: Check modified files
+      # Check Bash files
+      - name: Check Bash Syntax
         run: |
-          set -e  # stop job on first error
+          set -e
+          for file in $(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA | grep '\.sh$' || true); do
+            echo "Checking Bash syntax: $file"
+            bash -n "$file"
+          done
 
-          # Get all files from the current commit
-          MODIFIED_FILES=$(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA)
+      # Check Python files
+      - name: Check Python Syntax
+        run: |
+          set -e
+          for file in $(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA | grep '\.py$' || true); do
+            echo "Checking Python syntax: $file"
+            python -m py_compile "$file"
+          done
 
-          if [ -z "$MODIFIED_FILES" ]; then
-            echo "No modified files to check."
-          else
-            echo "Modified files:"
-            echo "$MODIFIED_FILES"
+      # Check YAML files
+      - name: Validate YAML Syntax
+        run: |
+          set -e
+          for file in $(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA | grep -E '\.ya?ml$' || true); do
+            echo "Validating YAML: $file"
+            python -c "import yaml; yaml.safe_load(open('$file'))"
+          done
 
-            echo "$MODIFIED_FILES" | while IFS= read -r file; do
-              echo "Processing '$file'..."
+  # ==========================
+  # Job 2: Pipeline Trigger
+  # ==========================
+  trigger_pipeline:
+    name: "Trigger Pipeline DAGs"
+    runs-on: ubuntu-latest
+    needs: syntax_checks    # يشتغل بعد نجاح الـCI فقط
+    if: github.ref == 'refs/heads/development'  # يشتغل بس على branch development
 
-              # Bash scripts: syntax check
-              if [[ $file == *.sh ]]; then
-                echo "Checking Bash syntax for $file"
-                bash -n "$file"
-              fi
+    steps:
+      # Checkout code
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-              # Python files: compile check
-              if [[ $file == *.py ]]; then
-                echo "Checking Python syntax for $file"
-                python -m py_compile "$file"
-              fi
+      # Start Docker Compose
+      - name: Start Docker Compose
+        run: |
+          echo "Starting Docker Compose for Airflow + Spark + Kafka..."
+          docker-compose -f docker-compose.dev.yml up -d
 
-              # YAML files: syntax validation using PyYAML
-              if [[ $file == *.yml || $file == *.yaml ]]; then
-                echo "Validating YAML syntax for $file"
-                python -c "import yaml; yaml.safe_load(open('$file'))"
-              fi
+      # Wait a bit for services to start
+      - name: Wait for Services
+        run: |
+          echo "Waiting 20 seconds for services to be ready..."
+          sleep 20
 
-            done
-          fi
+      # Trigger Pipeline DAGs
+      - name: Trigger DAGs
+        run: |
+          chmod +x scripts/trigger_pipeline_dag.sh
+          ./scripts/trigger_pipeline_dag.sh
+
+      - name: Confirm DAG Trigger
+        run: echo "All DAGs triggered successfully!"
