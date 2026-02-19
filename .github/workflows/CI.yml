@@ -16,23 +16,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
       - name: Checkout Repository
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      # Setup Python
       - name: Setup Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # Install YAML validator
       - name: Install YAML Validator
         run: pip install pyyaml
 
-      # Check Bash files
       - name: Check Bash Syntax
         run: |
           set -e
@@ -41,7 +37,6 @@ jobs:
             bash -n "$file"
           done
 
-      # Check Python files
       - name: Check Python Syntax
         run: |
           set -e
@@ -50,7 +45,6 @@ jobs:
             python -m py_compile "$file"
           done
 
-      # Check YAML files
       - name: Validate YAML Syntax
         run: |
           set -e
@@ -69,26 +63,87 @@ jobs:
     needs: syntax_checks
     if: github.ref == 'refs/heads/development'
 
+    env:
+      # ========= Secrets =========
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      AIRFLOW_FERNET_KEY: ${{ secrets.AIRFLOW_FERNET_KEY }}
+      AIRFLOW_SECRET_KEY: ${{ secrets.AIRFLOW_SECRET_KEY }}
+      AIRFLOW_ADMIN_PASSWORD: ${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
+
+      # ========= Normal Config =========
+      POSTGRES_PORT: 5432
+
+      AIRFLOW_EXECUTOR: LocalExecutor
+      AIRFLOW_DAGS_PAUSED_AT_CREATION: "true"
+      AIRFLOW_LOAD_EXAMPLES: "false"
+      AIRFLOW_EXPOSE_CONFIG: "true"
+      AIRFLOW_WEBSERVER_EXTERNAL_PORT: 8087
+
+      AIRFLOW_ADMIN_USER: admin
+      AIRFLOW_ADMIN_FIRSTNAME: Admin
+      AIRFLOW_ADMIN_LASTNAME: User
+      AIRFLOW_ADMIN_EMAIL: admin@example.com
+
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+
+      KAFKA_BROKER_ID: 1
+      KAFKA_INTERNAL_PORT: 9092
+      KAFKA_EXTERNAL_PORT: 9098
+      KAFKA_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_UI_PORT: 8081
+      KAFKA_UI_EXTERNAL_PORT: 8088
+
+      SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_WEBUI_PORT: 8080
+      SPARK_APP_UI_PORT: 4040
+      SPARK_WORKER_WEBUI_PORT_1: 8083
+      SPARK_WORKER_WEBUI_PORT_2: 8084
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_CORES: 2
+      SPARK_MASTER_CONTAINER: spark-master
+      SPARK_MASTER_UI_EXTERNAL_PORT: 8082
+
+      KAFKA_TOPIC: earthquake_raw
+      KAFKA_TOPIC_WOLF: wolf_seismic_stream
+
+      SEISMIC_WS_URL: wss://www.seismicportal.eu/standing_order/websocket
+      SEISMIC_WS_PING_INTERVAL: 15
+      SEISMIC_CSV_FILENAME: seismic_events.csv
+
+      EARTHQUAKE_CHECKPOINT_PATH: /opt/delta-lake/checkpoints/earthquakes
+      EARTHQUAKE_DELTA_TABLE_PATH: /opt/delta-lake/tables/earthquakes
+      WOLF_CHECKPOINT_PATH: /opt/delta-lake/checkpoints/wolf_seismic
+      WOLF_DELTA_TABLE_PATH: /opt/delta-lake/tables/wolf_seismic
+      AIRPORT_DELTA_TABLE_PATH: /opt/delta-lake/tables/airports
+      PROXIMITY_CHECKPOINT_PATH: /opt/delta-lake/checkpoints/proximity_events
+      PROXIMITY_DELTA_TABLE_PATH: /opt/delta-lake/tables/proximity_events
+
+      EARTHQUAKE_METRICS_PORT: 8000
+      WOLF_METRICS_PORT: 8001
+      AIRPORT_METRICS_PORT: 8002
+
     steps:
-      # Checkout code
       - name: Checkout Repository
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      # Verify Docker & Compose
       - name: Verify Docker Installation
         run: |
           docker version
           docker compose version
 
-      # Start Docker Compose services
       - name: Start Docker Compose
         run: |
           echo "Starting Docker Compose for Airflow + Spark + Kafka..."
           docker compose -f docker-compose.yml up -d
 
-      # Wait for Airflow to be ready
       - name: Wait for Airflow Services
         run: |
           echo "Waiting for Airflow webserver to be ready..."
@@ -99,24 +154,20 @@ jobs:
             done
           ' || {
             echo "Airflow failed to start within 5 minutes"
-            echo "Showing recent logs:"
             docker compose logs --tail=50
             exit 1
           }
           echo "Airflow is ready!"
 
-      # Trigger Pipeline DAGs
       - name: Trigger DAGs
         run: |
           echo "Triggering DAGs..."
           chmod +x scripts/trigger_pipeline_dag.sh
           ./scripts/trigger_pipeline_dag.sh
 
-      # Confirm Execution
       - name: Confirm DAG Trigger
         run: echo "All DAGs triggered successfully!"
 
-      # Cleanup Docker
       - name: Cleanup Docker
         if: always()
         run: |
