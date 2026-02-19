@@ -75,11 +75,11 @@ jobs:
         with:
           fetch-depth: 0
   
-      - name: Install Docker Compose
+      - name: Install Docker Compose CLI (V2)
         run: |
-          python -m pip install --user docker-compose
-          export PATH=$PATH:~/.local/bin
-          docker-compose --version
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+
 
 
 
@@ -87,7 +87,9 @@ jobs:
       - name: Start Docker Compose
         run: |
           echo "Starting Docker Compose for Airflow + Spark + Kafka..."
-          docker-compose -f docker-compose.dev.yml up -d
+          docker compose -f docker-compose.dev.yml up -d
+
+
 
       # Wait a bit for services to start
       - name: Wait for Services
