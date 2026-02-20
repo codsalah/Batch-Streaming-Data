@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ "development" ]
 
+env:
+  GRAFANA_PORT: 3000
+  AIRFLOW_PORT: 8080
+  CONTAINER_TIMEOUT: 300
+  AIRFLOW_CONTAINER: airflow-webserver
+  GRAFANA_CONTAINER: grafana
+
 jobs:
 
   # ==========================
@@ -82,28 +89,47 @@ jobs:
           docker version
           docker compose version
 
+      # Prepare Environment
+      - name: Prepare .env File
+        run: |
+          if [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+
       # Start Docker Compose services
       - name: Start Docker Compose
         run: |
-          echo "Starting Docker Compose for Airflow + Spark + Kafka..."
+          echo "Starting Docker Compose for Airflow + Spark + Kafka + Grafana..."
           docker compose -f docker-compose.yml up -d
 
       # Wait for Airflow to be ready
-      - name: Wait for Airflow Services
+      - name: Wait for Services (Airflow & Grafana)
         run: |
           echo "Waiting for Airflow webserver to be ready..."
-          timeout 300 bash -c '
-            until docker compose exec airflow-webserver airflow version &> /dev/null; do
+          timeout ${{ env.CONTAINER_TIMEOUT }} bash -c '
+            until docker compose exec ${{ env.AIRFLOW_CONTAINER }} airflow version &> /dev/null; do
               echo "Airflow not ready yet, waiting 5 seconds..."
               sleep 5
             done
           ' || {
-            echo "Airflow failed to start within 5 minutes"
-            echo "Showing recent logs:"
-            docker compose logs --tail=50
+            echo "Airflow failed to start within ${{ env.CONTAINER_TIMEOUT }} seconds"
+            docker compose logs ${{ env.AIRFLOW_CONTAINER }}
             exit 1
           }
           echo "Airflow is ready!"
+
+          echo "Waiting for Grafana to be ready..."
+          timeout ${{ env.CONTAINER_TIMEOUT }} bash -c '
+            until curl -s http://localhost:${{ env.GRAFANA_PORT }}/api/health | grep -q "\"database\": \"ok\""; do
+              echo "Grafana not ready yet, waiting 5 seconds..."
+              sleep 5
+            done
+          ' || {
+            echo "Grafana failed to start within ${{ env.CONTAINER_TIMEOUT }} seconds"
+            docker compose logs ${{ env.GRAFANA_CONTAINER }}
+            exit 1
+          }
+          echo "Grafana is ready!"
 
       # Trigger Pipeline DAGs
       - name: Trigger DAGs
@@ -120,5 +146,5 @@ jobs:
       - name: Cleanup Docker
         if: always()
         run: |
-          echo "Cleaning up Docker containers..."
-          docker compose -f docker-compose.yml down || true
+          echo "Cleaning up Docker containers and volumes..."
+          docker compose -f docker-compose.yml down -v || true
