@@ -15,76 +15,112 @@ env:
 
 jobs:
 
-  # ==========================
-  # Job 1: Syntax Checks
-  # ==========================
   syntax_checks:
-    name: "Syntax Checks"
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
       - name: Checkout Repository
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
-      # Setup Python
-      - name: Setup Python 3.10
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      # Install YAML validator
       - name: Install YAML Validator
         run: pip install pyyaml
 
-      # Check Bash files
-      - name: Check Bash Syntax
-        run: |
-          set -e
-          for file in $(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA | grep '\.sh$' || true); do
-            echo "Checking Bash syntax: $file"
-            bash -n "$file"
-          done
-
-      # Check Python files
       - name: Check Python Syntax
         run: |
-          set -e
-          for file in $(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA | grep '\.py$' || true); do
-            echo "Checking Python syntax: $file"
+          for file in $(git ls-files '*.py'); do
             python -m py_compile "$file"
           done
 
-      # Check YAML files
       - name: Validate YAML Syntax
         run: |
-          set -e
-          for file in $(git diff-tree --no-commit-id --name-only -r $GITHUB_SHA | grep -E '\.ya?ml$' || true); do
-            echo "Validating YAML: $file"
+          for file in $(git ls-files '*.yml' '*.yaml'); do
             python -c "import yaml; yaml.safe_load(open('$file'))"
           done
 
 
-  # ==========================
-  # Job 2: Pipeline Trigger
-  # ==========================
   trigger_pipeline:
-    name: "Trigger Pipeline DAGs"
     runs-on: ubuntu-latest
     needs: syntax_checks
     if: github.ref == 'refs/heads/development'
 
     steps:
-      # Checkout code
       - name: Checkout Repository
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
-      # Verify Docker & Compose
-      - name: Verify Docker Installation
+      # =========================
+      # Create .env from Secrets
+      # =========================
+      - name: Create .env file
+        run: |
+          cat <<EOF > .env
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_PORT=5432
+
+          AIRFLOW_EXECUTOR=LocalExecutor
+          AIRFLOW_FERNET_KEY=${{ secrets.AIRFLOW_FERNET_KEY }}
+          AIRFLOW_SECRET_KEY=${{ secrets.AIRFLOW_SECRET_KEY }}
+          AIRFLOW_DAGS_PAUSED_AT_CREATION=true
+          AIRFLOW_LOAD_EXAMPLES=false
+          AIRFLOW_EXPOSE_CONFIG=true
+          AIRFLOW_WEBSERVER_EXTERNAL_PORT=8087
+
+          AIRFLOW_ADMIN_USER=admin
+          AIRFLOW_ADMIN_PASSWORD=${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
+          AIRFLOW_ADMIN_FIRSTNAME=Admin
+          AIRFLOW_ADMIN_LASTNAME=User
+          AIRFLOW_ADMIN_EMAIL=admin@example.com
+
+          ZOOKEEPER_CLIENT_PORT=2181
+          ZOOKEEPER_TICK_TIME=2000
+          ZOOKEEPER_SYNC_LIMIT=2
+
+          KAFKA_BROKER_ID=1
+          KAFKA_INTERNAL_PORT=9092
+          KAFKA_EXTERNAL_PORT=9098
+          KAFKA_REPLICATION_FACTOR=1
+          KAFKA_LOG_RETENTION_HOURS=168
+          KAFKA_LOG_SEGMENT_BYTES=1073741824
+          KAFKA_UI_PORT=8081
+          KAFKA_UI_EXTERNAL_PORT=8088
+
+          SPARK_MASTER_PORT=7077
+          SPARK_MASTER_WEBUI_PORT=8080
+          SPARK_APP_UI_PORT=4040
+          SPARK_WORKER_WEBUI_PORT_1=8083
+          SPARK_WORKER_WEBUI_PORT_2=8084
+          SPARK_WORKER_MEMORY=2g
+          SPARK_WORKER_CORES=2
+          SPARK_MASTER_CONTAINER=spark-master
+          SPARK_MASTER_UI_EXTERNAL_PORT=8082
+
+          KAFKA_TOPIC=earthquake_raw
+          KAFKA_TOPIC_WOLF=wolf_seismic_stream
+
+          SEISMIC_WS_URL=wss://www.seismicportal.eu/standing_order/websocket
+          SEISMIC_WS_PING_INTERVAL=15
+          SEISMIC_CSV_FILENAME=seismic_events.csv
+
+          EARTHQUAKE_CHECKPOINT_PATH=/opt/delta-lake/checkpoints/earthquakes
+          EARTHQUAKE_DELTA_TABLE_PATH=/opt/delta-lake/tables/earthquakes
+          WOLF_CHECKPOINT_PATH=/opt/delta-lake/checkpoints/wolf_seismic
+          WOLF_DELTA_TABLE_PATH=/opt/delta-lake/tables/wolf_seismic
+          AIRPORT_DELTA_TABLE_PATH=/opt/delta-lake/tables/airports
+          PROXIMITY_CHECKPOINT_PATH=/opt/delta-lake/checkpoints/proximity_events
+          PROXIMITY_DELTA_TABLE_PATH=/opt/delta-lake/tables/proximity_events
+
+          EARTHQUAKE_METRICS_PORT=8000
+          WOLF_METRICS_PORT=8001
+          AIRPORT_METRICS_PORT=8002
+          EOF
+
+      - name: Verify Docker
         run: |
           docker version
           docker compose version
