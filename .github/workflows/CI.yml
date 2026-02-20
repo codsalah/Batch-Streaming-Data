@@ -2,9 +2,9 @@ name: CI - Syntax and Pipeline Checks
 
 on:
   push:
-    branches: [ "development" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "development" ]
+    branches: [ "main" ]
 
 env:
   GRAFANA_PORT: 3000
