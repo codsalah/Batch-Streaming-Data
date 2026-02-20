@@ -16,8 +16,8 @@ fi
 
 # Determine paths
 PRODUCER_SCRIPT="$PROJECT_ROOT/Kafka/producer-earthquakes.py"
-LOG_FILE="$PROJECT_ROOT/logs/earthquake_producer.log"
-PID_FILE="$PROJECT_ROOT/logs/earthquake_producer.pid"
+LOG_FILE="$PROJECT_ROOT/local_logs/earthquake_producer.log"
+PID_FILE="$PROJECT_ROOT/local_logs/earthquake_producer.pid"
 
 # Cleanup existing process if running
 echo "Checking for existing Earthquake Producer..."
@@ -39,7 +39,12 @@ fi
 
 # Run the producer in the background
 echo "Running producer: $PRODUCER_SCRIPT"
-PYTHONUNBUFFERED=1 nohup python3 "$PRODUCER_SCRIPT" > "$LOG_FILE" 2>&1 &
+PYTHON_EXE="$PROJECT_ROOT/venv/bin/python"
+if [ ! -f "$PYTHON_EXE" ]; then
+    echo "Venv not found at $PYTHON_EXE, using system python3"
+    PYTHON_EXE="python3"
+fi
+PYTHONUNBUFFERED=1 nohup "$PYTHON_EXE" "$PRODUCER_SCRIPT" > "$LOG_FILE" 2>&1 &
 PRODUCER_PID=$!
 
 echo "Earthquake Producer started with PID: $PRODUCER_PID"

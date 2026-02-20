@@ -25,7 +25,7 @@ SPARK_PORT="${SPARK_MASTER_PORT:-7077}"
 SPARK_SUBMIT="/opt/spark/bin/spark-submit"
 
 # Spark application script path
-APP_PATH="/opt/spark/scripts/spark_wolf_seismic_consumer.py"
+APP_PATH="/opt/spark/consumers/spark_wolf_seismic_consumer.py"
 
 # Required Kafka package version (match Spark version)
 # Required Kafka and Delta Lake packages

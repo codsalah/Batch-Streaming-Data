@@ -93,6 +93,7 @@ def read_wolf_kafka(spark, bootstrap_servers, topic):
         .option("subscribe", topic)
         # Read from the earliest offsets so existing topic data appears
         .option("startingOffsets", "earliest")
+        .option("failOnDataLoss", "false")
         .load()
     )
 
