@@ -131,6 +131,12 @@ jobs:
           }
           echo "Grafana is ready!"
 
+      # Validate Environment Dependencies
+      - name: Validate Dependencies
+        run: |
+          chmod +x scripts/validate_env.sh
+          ./scripts/validate_env.sh
+
       # Trigger Pipeline DAGs
       - name: Trigger DAGs
         run: |
