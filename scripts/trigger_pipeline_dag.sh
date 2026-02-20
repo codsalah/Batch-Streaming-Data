@@ -11,8 +11,9 @@ fi
 # Use environment variables with defaults
 AIRFLOW_CONTAINER="${AIRFLOW_WEBSERVER_CONTAINER:-airflow-webserver}"
 
-echo "Installing Python dependencies for producers..."
-pip install --user websockets kafka-python python-dotenv 2>/dev/null || true
+echo "Validating environment dependencies..."
+chmod +x "$PROJECT_ROOT/scripts/validate_env.sh"
+"$PROJECT_ROOT/scripts/validate_env.sh"
 
 echo "Triggering seismic infrastructure validation DAG..."
 docker exec "${AIRFLOW_CONTAINER}" airflow dags trigger seismic_infra_validation_dag

@@ -8,9 +8,10 @@ WORKDIR /app
 COPY . /app
 
 # Install system and Python dependencies
+COPY requirements.txt .
 RUN apt-get update && \
     apt-get install -y postgresql-client && \
-    pip install --no-cache-dir psycopg2-binary python-dotenv
+    pip install --no-cache-dir -r requirements.txt
 
 # Default command to keep container running
 CMD ["tail", "-f", "/dev/null"]
