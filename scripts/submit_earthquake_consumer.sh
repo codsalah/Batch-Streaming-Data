@@ -14,7 +14,7 @@ SPARK_PORT="${SPARK_MASTER_PORT:-7077}"
 SPARK_WEBUI_PORT="${SPARK_MASTER_WEBUI_PORT:-8080}"
 
 # Submit the Spark job
-docker exec -u root "${SPARK_MASTER}" spark-submit \
+docker exec -u root "${SPARK_MASTER}" /opt/spark/bin/spark-submit \
     --master "spark://${SPARK_MASTER}:${SPARK_PORT}" \
     --deploy-mode client \
     --name EarthquakeStreamProcessor \

@@ -17,7 +17,7 @@ PROXIMITY_CHECKPOINT = os.getenv('PROXIMITY_CHECKPOINT_PATH', '/opt/delta-lake/c
 # Haversine distance UDF
 def haversine(lat1, lon1, lat2, lon2):
     if None in [lat1, lon1, lat2, lon2]: return None
-    R = 10000 # Earth radius in km (big to check) 
+    R = 6371 # Earth radius in km
     dLat = math.radians(lat2 - lat1)
     dLon = math.radians(lon2 - lon1)
     a = math.sin(dLat/2) * math.sin(dLat/2) + \
@@ -27,7 +27,7 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     return R * c
 
-# if distance is less than 10000km, return true 
+# if distance is less than 20000km, return true 
 distance_udf = udf(haversine, DoubleType())
 
 def create_spark_session():
@@ -70,7 +70,7 @@ def main():
     # Join Stream (Quakes) with Static (Airports)
     proximity_df = quakes.crossJoin(airports) \
         .withColumn("distance_km", distance_udf(col("q_lat"), col("q_lon"), col("a_lat"), col("a_lon"))) \
-        .filter(col("distance_km") < 5000) # Threshold set to 5000km for testing
+        .filter(col("distance_km") < 20000) # Threshold set to 20000km for testing
 
     # Output Results
     print("Writing proximity events to Delta Table...")

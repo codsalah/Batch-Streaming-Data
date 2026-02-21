@@ -48,6 +48,7 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: '${AIRFLOW_LOAD_EXAMPLES}'
       AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: '${AIRFLOW_EXPOSE_CONFIG}'
+      _PIP_ADDITIONAL_REQUIREMENTS: "kafka-python websockets python-dotenv prometheus-client"
       KAFKA_BROKER: kafka:${KAFKA_INTERNAL_PORT}
       PYTHONPATH: /home/airflow/.local/lib/python3.10/site-packages
       PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -60,6 +61,7 @@ services:
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
       - ./Kafka:/opt/airflow/Kafka
+      - ./local_logs:/opt/airflow/local_logs
       - ./.env:/opt/airflow/.env
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -88,6 +90,7 @@ services:
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: '${AIRFLOW_DAGS_PAUSED_AT_CREATION}'
       AIRFLOW__CORE__LOAD_EXAMPLES: '${AIRFLOW_LOAD_EXAMPLES}'
+      _PIP_ADDITIONAL_REQUIREMENTS: "kafka-python websockets python-dotenv prometheus-client"
       KAFKA_BROKER: kafka:${KAFKA_INTERNAL_PORT}
       PYTHONPATH: /home/airflow/.local/lib/python3.10/site-packages
       PATH: /home/airflow/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -100,6 +103,7 @@ services:
       - ./scripts:/opt/airflow/scripts
       - ./data:/opt/airflow/data
       - ./Kafka:/opt/airflow/Kafka
+      - ./local_logs:/opt/airflow/local_logs
       - ./.env:/opt/airflow/.env
       - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler

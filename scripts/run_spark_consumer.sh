@@ -24,4 +24,4 @@ docker exec "${SPARK_MASTER}" /opt/spark/bin/spark-submit \
   --conf spark.cores.max=2 \
   --conf spark.executor.memory=1g \
   --conf spark.jars.ivy=/tmp/.ivy2 \
-  /opt/spark/scripts/spark_consumer.py
+  /opt/spark/consumers/spark_consumer.py
