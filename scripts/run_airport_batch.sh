@@ -65,12 +65,15 @@ SPARK_EXIT=$?
 echo "Spark job completed with exit code: $SPARK_EXIT"
 
 if [ $SPARK_EXIT -eq 0 ]; then
-    echo "Copying Delta table from container..."
-    rm -rf "$DELTA_LOCAL"
-    mkdir -p "$DELTA_LOCAL"
-    docker cp "$SPARK_MASTER":/opt/delta-lake/tables/airports/. "$DELTA_LOCAL/"
+    echo "Copying Delta table from container's temp directory..."
+    sudo rm -rf "$DELTA_LOCAL"
+    sudo mkdir -p "$DELTA_LOCAL"
+    #/tmp/delta-airports
+    sudo docker cp "$SPARK_MASTER":/tmp/delta-airports/. "$DELTA_LOCAL/"
+    sudo chown -R $(whoami):$(whoami) "$DELTA_LOCAL"
     echo "Delta table copied successfully:"
     ls -la "$DELTA_LOCAL"
+    docker exec "$SPARK_MASTER" rm -rf /tmp/delta-airports
 else
     echo "Spark job failed — Delta table not copied"
 fi

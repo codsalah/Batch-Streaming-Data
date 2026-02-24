@@ -11,7 +11,7 @@ from pyspark.sql.types import (
 # Configuration
 # =========================
 CSV_PATH = os.getenv("AIRPORT_CSV_PATH", "/opt/spark/work-dir/airports.csv")
-DELTA_TABLE_PATH = "/opt/delta-lake/tables/airports"
+DELTA_TABLE_PATH = "/tmp/delta-airports"
 
 airport_schema = StructType([
     StructField("id", IntegerType(), True),
