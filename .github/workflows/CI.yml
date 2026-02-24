@@ -2,9 +2,9 @@ name: CI - Syntax and Pipeline Checks
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "quality-proximity" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "quality-proximity" ]
 
 env:
   GRAFANA_PORT: 3000
