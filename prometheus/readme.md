@@ -54,13 +54,6 @@ This combination allows correlating **resource usage** with **application behavi
 
 Below are example screenshots of the monitoring dashboards:
 
-![Dashboard Overview](imgs/dashboard-1.png)
-![Detailed Metrics View](imgs/dashboard-2.png)
+![Dashboard Overview](imgs/grafanadashboard1.jpeg)
+![Detailed Metrics View](imgs/grafanadashboard2.jpeg)
 
----
-  
-* نعمل نسخة أقصر
-* أو نضيف diagrams
-* أو نخليها production-grade أكتر
-
-نقدر نصقّلها لحد ما تبقى README يليق بريبو محترم فعلًا 🧠✨
