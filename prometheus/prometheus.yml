@@ -1,45 +1,79 @@
 global:
-  scrape_interval: 10s
-  evaluation_interval: 10s
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
 
 scrape_configs:
-  # Kafka JMX Metrics
+  # ============================================
+  # KAFKA
+  # ============================================
   - job_name: 'kafka'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+    metrics_path: '/metrics'
     static_configs:
       - targets: ['kafka:9404']
+        labels:
+          service: 'kafka'
+          component: 'broker'
+
+ 
+  - job_name: 'spark_applications'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    metrics_path: '/metrics/prometheus'
+    static_configs:
+      - targets: 
+        - 'spark-master:4040'
+        - 'spark-master:4041'
+        labels:
+          service: 'spark'
+          component: 'application'
+  
+    honor_labels: true
+
+  # ============================================
+  # PYTHON PRODUCERS
+  # ============================================
+  - job_name: 'python_producers'
     scrape_interval: 5s
-
-  # Spark Master
-  - job_name: 'spark-master'
-    static_configs:
-      - targets: ['spark-master:8080']
-    metrics_path: /metrics/executors/prometheus
-    scrape_interval: 10s
-
-  # Spark Workers
-  - job_name: 'spark-workers'
+    scrape_timeout: 3s
+    metrics_path: '/metrics'
     static_configs:
       - targets: 
-        - 'spark-worker-1:4040'
-        - 'spark-worker-2:4040'
-    metrics_path: /metrics/executors/prometheus
-    scrape_interval: 10s
-
-  # Python Producers 
-  - job_name: 'python-producers'
-    static_configs:
-      - targets: 
-        - 'host.docker.internal:8000'  # Earthquake Producer
-        - 'host.docker.internal:8001'  # Wolf Producer
-        - 'host.docker.internal:8002'  # Airport Producer
-    scrape_interval: 10s
-    # Windows + Docker
+        - '172.17.0.1:8000'
+        - '172.17.0.1:8001'
+        
     relabel_configs:
       - source_labels: [__address__]
-        target_label: instance
-        replacement: "windows-producer-${1}"
+        regex: '.*:8000'
+        target_label: producer
+        replacement: 'earthquake'
+      - source_labels: [__address__]
+        regex: '.*:8001'
+        target_label: producer
+        replacement: 'wolf'
+     
 
-  # Prometheus    
+  # ============================================
+  # PROMETHEUS
+  # ============================================
   - job_name: 'prometheus'
+    scrape_interval: 10s
     static_configs:
       - targets: ['localhost:9090']
+        labels:
+          service: 'monitoring'
+          component: 'prometheus'
+
+  # ============================================
+  # GRAFANA
+  # ============================================
+  - job_name: 'grafana'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          service: 'monitoring'
+          component: 'grafana'
