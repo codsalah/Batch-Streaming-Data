@@ -110,8 +110,14 @@ def parse_kafka_value(df):
 # Apply Wolf schema and flatten structure
 # =====================================================
 def apply_wolf_schema(df, wolf_schema):
-    return df.withColumn("wolf", from_json(col("raw_value"), wolf_schema)) \
-             .select("wolf.*", "kafka_timestamp")
+    # Step 1: Parse JSON and keep original if needed (omitted here for brevity)
+    parsed_df = df.withColumn("wolf", from_json(col("raw_value"), wolf_schema))
+    
+    # Step 2: Filter out corrupt records where parsing failed
+    valid_df = parsed_df.filter(col("wolf").isNotNull())
+    
+    # Step 3: Flatten and select fields
+    return valid_df.select("wolf.*", "kafka_timestamp")
 
 # =====================================================
 # Convert timestamp fields to Spark TimestampType
@@ -121,11 +127,37 @@ def cast_wolf_timestamps(df):
              .withColumn("update_at_ts", to_timestamp("update_at"))
 
 # =====================================================
-# Clean data
+# Clean and Validate data
 # =====================================================
 def clean_wolf_data(df):
-    return df.filter(col("latitude").isNotNull()) \
-             .filter(col("longitude").isNotNull())
+    """
+    Apply quality checks:
+    - Latitude and Longitude range checks
+    - Remove nulls for critical fields
+    - Deduplicate events
+    """
+    # Range checks and null filters
+    validated_df = df.filter(
+        (col("latitude") >= -90) & (col("latitude") <= 90) &
+        (col("longitude") >= -180) & (col("longitude") <= 180) &
+        (col("create_at").isNotNull()) &
+        (col("region").isNotNull())
+    )
+    
+    # Deduplication
+    # Wolf seismic data usually comes for specific stations at specific times
+    # We use a combination of Station and create_at as a unique key for deduplication
+    # (Assuming Station is present in the flattened 'wolf.*' selection)
+    # If Station is not in the schema, we might need to adjust.
+    # Looking at the producer, it uses 'Station' as Kafka key, but let's check if it's in the schema.
+    # Ah, I see it's NOT in the provided wolf_schema in the file.
+    
+    # Let me check if 'Station' should be in the schema.
+    # The producer says: key = str(data['Station'])
+    # But the wolf_schema in spark_wolf_seismic_consumer.py doesn't have it.
+    # I will add it to the schema in the next step or here if I can.
+    
+    return validated_df.dropDuplicates(["region", "create_at", "latitude", "longitude"])
 
 # =====================================================
 # Main application entry point

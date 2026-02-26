@@ -13,3 +13,5 @@ wolf_consumer.log
 .AccessPoints
 local_logs/
 *.log
+local_logs/*.log
+local_logs/*.pid

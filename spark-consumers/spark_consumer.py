@@ -100,59 +100,56 @@ def read_from_kafka(spark):
 
 def parse_and_transform(kafka_df):
     """
-    Parse JSON from Kafka and flatten the structure
-    
-    Steps:
-    1. Parse Kafka value as JSON
-    2. Extract nested fields (to match the schema)
-    3. Flatten structure (to match the schema)
-    4. Add processing metadata
+    Parse JSON from Kafka and flatten the structure with quality checks.
     """
     
     # Step 1: Parse JSON from Kafka value column
+    # We keep raw_value for debugging or dead-letter if needed
     parsed_df = kafka_df.selectExpr("CAST(value AS STRING) as json_string") \
-        .select(from_json(col("json_string"), earthquake_schema).alias("data"))
+        .withColumn("data", from_json(col("json_string"), earthquake_schema))
     
-    # Step 2 & 3: Extract and flatten all fields (to match the schema)
-    flattened_df = parsed_df.select(
-        # Action field
+    # Step 2: Filter out corrupt records (where parsing failed)
+    valid_json_df = parsed_df.filter(col("data").isNotNull())
+    
+    # Step 3 & 4: Extract and flatten all fields
+    flattened_df = valid_json_df.select(
         col("data.action").alias("action"),
-        
-        # Event identifiers
         col("data.data.id").alias("event_id"),
         col("data.data.properties.unid").alias("unid"),
-        
-        # Timestamps
         to_timestamp(col("data.data.properties.time")).alias("event_time"),
         to_timestamp(col("data.data.properties.lastupdate")).alias("last_update"),
-        
-        # Location from properties
         col("data.data.properties.lat").alias("latitude"),
         col("data.data.properties.lon").alias("longitude"),
         col("data.data.properties.depth").alias("depth_km"),
-        
-        # Also extract coordinates array (lon, lat, depth)
         col("data.data.geometry.coordinates")[0].alias("coord_longitude"),
         col("data.data.geometry.coordinates")[1].alias("coord_latitude"),
         col("data.data.geometry.coordinates")[2].alias("coord_depth"),
-        
-        # Magnitude
         col("data.data.properties.mag").alias("magnitude"),
         col("data.data.properties.magtype").alias("magnitude_type"),
-        
-        # Region and metadata
         col("data.data.properties.flynn_region").alias("region"),
         col("data.data.properties.auth").alias("authority"),
         col("data.data.properties.evtype").alias("event_type"),
         col("data.data.properties.source_id").alias("source_id"),
         col("data.data.properties.source_catalog").alias("source_catalog"),
-        
-        # Step 4: Add processing metadata
         current_timestamp().alias("processed_at"),
         current_date().alias("processing_date")
     )
     
-    return flattened_df
+    # Step 5: Data Quality Range Checks
+    cleaned_df = flattened_df.filter(
+        (col("latitude") >= -90) & (col("latitude") <= 90) &
+        (col("longitude") >= -180) & (col("longitude") <= 180) &
+        (col("unid").isNotNull())
+    )
+    
+    # Step 6: Deduplication
+    # Note: dropDuplicates in streaming requires watermarking if not using append mode on all fields,
+    # but for simple deduplication on a unique key in append mode it works if configured with state.
+    # However, a simpler way for exactly-once in Delta is to use MERGE (foreachBatch),
+    # but for "basic basics", dropDuplicates on the unid is a good start.
+    deduplicated_df = cleaned_df.dropDuplicates(["unid"])
+    
+    return deduplicated_df
 
 
 def main():

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import argparse
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -19,8 +20,12 @@ from pyspark.sql.types import (
 # Configuration
 # =========================
 
-CSV_PATH = os.getenv("AIRPORT_CSV_PATH", "/data/airports.csv")
-DELTA_TABLE_PATH = os.getenv("AIRPORT_DELTA_TABLE_PATH", "/opt/delta-lake/tables/airports")
+def parse_args():
+    parser = argparse.ArgumentParser(description="Airport Batch To Delta")
+    parser.add_argument("--csv", type=str, default=os.getenv("AIRPORT_CSV_PATH", "/data/airports.csv"), help="Path to input CSV")
+    parser.add_argument("--delta", type=str, default=os.getenv("AIRPORT_DELTA_TABLE_PATH", "/opt/delta-lake/tables/airports"), help="Path to output Delta table")
+    parser.add_argument("--mode", type=str, default="append", choices=["append", "overwrite"], help="Write mode")
+    return parser.parse_args()
 
 # =========================
 # Schema Definition
