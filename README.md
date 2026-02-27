@@ -50,7 +50,7 @@ This pipeline was built to demonstrate a production-aligned setup that achieves:
 
 The ecosystem relies entirely on decoupled containerized services.
 
-![pipeline-ezgif com-optimize](https://github.com/user-attachments/assets/7b20ca2a-86fe-4350-9fbe-4906299699fd)
+![pipe-ezgif com-video-to-gif-converter(1)](https://github.com/user-attachments/assets/2aeef7aa-d0d7-4b57-8d6d-f7b841ef1111)
 
 
 The pipeline operates in 5 horizontal layers:
