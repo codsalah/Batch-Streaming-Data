@@ -12,12 +12,13 @@ An enterprise-grade, fault-tolerant, and highly available data pipeline designed
 - [End-to-End Data Flow](#end-to-end-data-flow)
 - [Technologies & Design Decisions](#technologies--design-decisions)
 - [Component Breakdown](#component-breakdown)
-  - [Kafka Ingestion](#1-kafka-ingestion)
-  - [Spark & Delta Lake (Consumers)](#2-spark--delta-lake-processing-layer)
-  - [Stream & Batch Interaction](#3-stream--batch-interaction)
-  - [Orchestration (Airflow)](#4-orchestration-airflow)
-  - [Monitoring & Observability](#5-monitoring--observability)
-- [Directory Structure](#directory-structure)
+  - [Pipeline Orchestration & Initialization (Airflow)](#1-pipeline-orchestration--initialization-airflow)
+  - [Real-Time Data Ingestion (Kafka Producers)](#2-real-time-data-ingestion-kafka-producers)
+  - [Stream Processing (Spark Structured Streaming)](#3-stream-processing-spark-structured-streaming)
+  - [Proximity Analysis (Stream-Static Join)](#4-proximity-analysis-stream-static-join)
+  - [Batch Processing (Static Reference Data)](#5-batch-processing-static-reference-data)
+  - [Infrastructure Verification & Validation](#6-infrastructure-verification--validation)
+  - [Metrics Collection & Observability](#7-metrics-collection--observability)
 - [Setup & Environment Configuration](#setup--environment-configuration)
 - [Execution Workflow](#execution-workflow)
   - [Automated Pipeline Execution](#automated-pipeline-execution)
@@ -26,9 +27,6 @@ An enterprise-grade, fault-tolerant, and highly available data pipeline designed
 - [Resilience & Failure Handling](#resilience--failure-handling)
 - [Logging & Data Validation Strategy](#logging--data-validation-strategy)
 - [Continuous Integration (CI/CD)](#continuous-integration-cicd)
-- [Deployment Considerations](#deployment-considerations)
-- [Future Improvements](#future-improvements)
-
 ---
 
 ## Project Overview
@@ -52,11 +50,7 @@ This pipeline was built to demonstrate a production-aligned setup that achieves:
 
 The ecosystem relies entirely on decoupled containerized services.
 
-#### Architecture
-placeholder
-
-
-
+https://github.com/user-attachments/assets/8059069a-eae0-4ee6-89d4-153ba68814c8
 
 The pipeline operates in 5 horizontal layers:
 1. **Source/Ingestion Layer:** Python Daemons capturing WebSocket signals.
@@ -172,7 +166,7 @@ flowchart LR
 
 ---
 
-## Component Breakdown: Architecture Deep-Dive
+## Component Breakdown
 
 Complete seismic data pipeline architecture tracing real-time data ingestion from external APIs through Kafka messaging, Spark stream processing, Delta Lake storage, geospatial analysis, and comprehensive monitoring.
 
