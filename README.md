@@ -50,7 +50,8 @@ This pipeline was built to demonstrate a production-aligned setup that achieves:
 
 The ecosystem relies entirely on decoupled containerized services.
 
-https://github.com/user-attachments/assets/8059069a-eae0-4ee6-89d4-153ba68814c8
+![pipeline-ezgif com-optimize](https://github.com/user-attachments/assets/7b20ca2a-86fe-4350-9fbe-4906299699fd)
+
 
 The pipeline operates in 5 horizontal layers:
 1. **Source/Ingestion Layer:** Python Daemons capturing WebSocket signals.
